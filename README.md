@@ -18,3 +18,13 @@ Companies deciding where to spend sponsorship money on social platforms typicall
 The time rules are implemented in `src/transform.py`. `filter_entries` selects posts and converts their timestamps to Python datetime values. `is_response_in_window` checks a response against a post's publication time; both arguments must be datetime values. Invalid or missing timestamps raise an error rather than being silently dropped.
 
 The raw-data checks in `check_links.py` still cover all dates. Building the post-level response table is the next step; these helpers alone do not create it.
+
+# Cleaning rules
+
+- `clean_users` keeps only `id` and `type`, with one row per account. Both users and groups are retained at this stage. Missing IDs, unknown types and conflicting types for the same ID raise an error. Name and description differences are irrelevant to this account lookup.
+- `clean_likes` keeps one like per exact `(userID, PostID)` pair, using the earliest recorded timestamp. This also removes exact duplicates. Timestamps become Python datetime values; missing IDs or invalid timestamps raise an error.
+- Deduplicate likes across the full file before applying the seven-day response window. Do not replace an earliest timestamp with a later one just because it fits the window.
+- Account and post IDs are not normalized. Responses from accounts absent from `users.csv` are retained when their posts can be matched.
+- Entries and comments are not deduplicated: the initial checks found unique entry and comment IDs. Multiple distinct comments by one account on one post remain separate comments.
+
+The cleaning functions do not modify or save raw files. They hold account or like-pair lookups in memory. Checking whether a like predates its post requires the upcoming post-level join; such rows must be reported and excluded from the response counts.
