@@ -12,6 +12,11 @@ ENTRY_COLUMNS = (
     "Timestamp", "Text", "NumImg", "ImgURL", "NumVideo", "VideoURL",
 )
 DEFAULT_USERS_PATH = Path(__file__).resolve().parent.parent / "data" / "users.csv"
+LIKE_COLUMNS = ("userID", "PostID", "Timestamp")
+COMMENT_COLUMNS = (
+    "PostID", "EntryID", "PostedBy", "SourceName", "SourceURL",
+    "GeoX", "GeoY", "Timestamp", "Text",
+)
 
 
 def read_users(path: str | Path) -> Iterator[dict[str, str]]:
@@ -42,6 +47,36 @@ def read_entries(path: str | Path) -> Iterator[dict[str, str]]:
                     f"förväntade {len(ENTRY_COLUMNS)} fält, fick {len(row)}."
                 )
             yield dict(zip(ENTRY_COLUMNS, row))
+
+
+def read_likes(path: str | Path) -> Iterator[dict[str, str]]:
+    path = Path(path).expanduser()
+    csv.field_size_limit(max(csv.field_size_limit(), 16 * 1024 * 1024))
+
+    with path.open(encoding="utf-8-sig", newline="") as file:
+        reader = csv.reader(file, delimiter="\t", quoting=csv.QUOTE_NONE)
+        for row in reader:
+            if len(row) != len(LIKE_COLUMNS):
+                raise ValueError(
+                    f"{path}, rad {reader.line_num}: "
+                    f"förväntade {len(LIKE_COLUMNS)} fält, fick {len(row)}."
+                )
+            yield dict(zip(LIKE_COLUMNS, row))
+
+
+def read_comments(path: str | Path) -> Iterator[dict[str, str]]:
+    path = Path(path).expanduser()
+    csv.field_size_limit(max(csv.field_size_limit(), 16 * 1024 * 1024))
+
+    with path.open(encoding="utf-8-sig", newline="") as file:
+        reader = csv.reader(file, delimiter="\t", quoting=csv.QUOTE_NONE)
+        for row in reader:
+            if len(row) != len(COMMENT_COLUMNS):
+                raise ValueError(
+                    f"{path}, rad {reader.line_num}: "
+                    f"förväntade {len(COMMENT_COLUMNS)} fält, fick {len(row)}."
+                )
+            yield dict(zip(COMMENT_COLUMNS, row))
 
 
 def main():
