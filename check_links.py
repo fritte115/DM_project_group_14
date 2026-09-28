@@ -1,6 +1,7 @@
 import argparse
 import csv
 from collections import Counter
+from datetime import datetime
 from pathlib import Path
 
 from src.extract import read_comments, read_entries, read_likes, read_users
@@ -64,6 +65,26 @@ def check_links(data_dir):
     for name in ("likes", "comments"):
         results[name]["without_post"] = sum(references[name].values())
 
+    print("Räknar omatchade likes per månad …", flush=True)
+    likes_per_month = Counter()
+    unmatched_per_month = Counter()
+    for like in read_likes(data_dir / "likes.csv"):
+        timestamp = like["Timestamp"]
+        if is_missing(timestamp):
+            month = "Saknat datum"
+        else:
+            try:
+                month = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S").strftime("%Y-%m")
+            except ValueError:
+                month = "Ogiltigt datum"
+        likes_per_month[month] += 1
+        if like["PostID"] in references["likes"]:
+            unmatched_per_month[month] += 1
+
+    assert sum(unmatched_per_month.values()) == results["likes"]["without_post"]
+    results["likes"]["rows_by_month"] = dict(sorted(likes_per_month.items()))
+    results["likes"]["without_post_by_month"] = dict(sorted(unmatched_per_month.items()))
+
     print("\n--- KOPPLINGSKONTROLL ---")
     for name in ("entries", "likes", "comments"):
         result = results[name]
@@ -76,6 +97,11 @@ def check_links(data_dir):
                 count = result[key]
                 share = f"{count / result['rows']:.2%}" if result["rows"] else "ej tillämpligt"
                 print(f"{label}: {count:,} ({share})")
+    print("\n--- LIKES UTAN MATCHANDE INLÄGG, PER LIKE-MÅNAD ---")
+    print(f"{'Månad':16} {'Alla likes':>12} {'Omatchade':>12} {'Andel':>10}")
+    for month, total in sorted(likes_per_month.items()):
+        unmatched = unmatched_per_month[month]
+        print(f"{month:16} {total:12,} {unmatched:12,} {unmatched / total:10.2%}")
     return results
 
 
