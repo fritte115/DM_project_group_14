@@ -1,0 +1,92 @@
+{
+  "data_issues": {
+    "rows": 8699313,
+    "duplicate_post_id": 0,
+    "negative_likes_7d": 0,
+    "negative_comments_7d": 0,
+    "timestamp_out_of_period": 0,
+    "has_image_blank": 0,
+    "has_video_blank": 0,
+    "zero_response_posts": 8353762,
+    "zero_response_share": 0.9602783576128368
+  },
+  "posting_frequency": {
+    "unique_authors": 195956,
+    "posts_per_day_median": 0.16666666666666666,
+    "posts_per_day_p99": 10.00833333333355,
+    "top_10_most_frequent_authors": [
+      {
+        "author_id": "musiclion",
+        "post_count": 129204,
+        "posts_per_day": 2392.6666666666665
+      },
+      {
+        "author_id": "jairmorselli",
+        "post_count": 39041,
+        "posts_per_day": 722.9814814814815
+      },
+      {
+        "author_id": "newbook",
+        "post_count": 20952,
+        "posts_per_day": 388.0
+      },
+      {
+        "author_id": "irishblog1",
+        "post_count": 20308,
+        "posts_per_day": 376.0740740740741
+      },
+      {
+        "author_id": "foreveradog",
+        "post_count": 20258,
+        "posts_per_day": 375.14814814814815
+      },
+      {
+        "author_id": "g38",
+        "post_count": 17847,
+        "posts_per_day": 330.5
+      },
+      {
+        "author_id": "newsportugal",
+        "post_count": 14512,
+        "posts_per_day": 268.74074074074076
+      },
+      {
+        "author_id": "ebookreleases",
+        "post_count": 14152,
+        "posts_per_day": 262.0740740740741
+      },
+      {
+        "author_id": "tinewsalert",
+        "post_count": 13540,
+        "posts_per_day": 250.74074074074073
+      },
+      {
+        "author_id": "proclus1",
+        "post_count": 13501,
+        "posts_per_day": 250.0185185185185
+      }
+    ]
+  },
+  "describe": {
+    "likes_7d": {
+      "count": 8699313.0,
+      "mean": 0.045276908647843804,
+      "std": 0.36674256652024523,
+      "min": 0.0,
+      "25%": 0.0,
+      "50%": 0.0,
+      "75%": 0.0,
+      "max": 82.0
+    },
+    "comments_7d": {
+      "count": 8699313.0,
+      "mean": 0.14607716724297654,
+      "std": 2.4446156635700427,
+      "min": 0.0,
+      "25%": 0.0,
+      "50%": 0.0,
+      "75%": 0.0,
+      "max": 2410.0
+    }
+  }
+}

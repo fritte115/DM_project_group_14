@@ -5,10 +5,8 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
-
 FILES = ["entries1.csv", "entries2.csv", "entries3.csv"]
 REPEATED = 1 << len(FILES)
-
 
 def is_missing(value):
     return value.strip().lower() in ("", "null", "\\n")

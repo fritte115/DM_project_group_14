@@ -1,0 +1,92 @@
+{
+  "data_issues": {
+    "rows": 1511968,
+    "duplicate_post_id": 0,
+    "negative_likes_7d": 0,
+    "negative_comments_7d": 0,
+    "timestamp_out_of_period": 0,
+    "has_image_blank": 0,
+    "has_video_blank": 0,
+    "zero_response_posts": 1168329,
+    "zero_response_share": 0.772720718957015
+  },
+  "posting_frequency": {
+    "unique_authors": 16475,
+    "posts_per_day_median": 0.5185185185185185,
+    "posts_per_day_p99": 20.051481481481495,
+    "top_10_most_frequent_authors": [
+      {
+        "author_id": "buzzingpost",
+        "post_count": 2692,
+        "posts_per_day": 49.851851851851855
+      },
+      {
+        "author_id": "kanootours",
+        "post_count": 2679,
+        "posts_per_day": 49.611111111111114
+      },
+      {
+        "author_id": "instantwebmeetingscom",
+        "post_count": 2620,
+        "posts_per_day": 48.51851851851852
+      },
+      {
+        "author_id": "peterschiffnews",
+        "post_count": 2562,
+        "posts_per_day": 47.44444444444444
+      },
+      {
+        "author_id": "straywebsurfer",
+        "post_count": 2562,
+        "posts_per_day": 47.44444444444444
+      },
+      {
+        "author_id": "gemfinddiamonds",
+        "post_count": 2535,
+        "posts_per_day": 46.94444444444444
+      },
+      {
+        "author_id": "trafficdepot",
+        "post_count": 2534,
+        "posts_per_day": 46.925925925925924
+      },
+      {
+        "author_id": "hotnewss",
+        "post_count": 2526,
+        "posts_per_day": 46.77777777777778
+      },
+      {
+        "author_id": "widiastianto",
+        "post_count": 2482,
+        "posts_per_day": 45.96296296296296
+      },
+      {
+        "author_id": "bnotizie",
+        "post_count": 2436,
+        "posts_per_day": 45.111111111111114
+      }
+    ]
+  },
+  "describe": {
+    "likes_7d": {
+      "count": 1511968.0,
+      "mean": 0.2591900093123664,
+      "std": 0.8463903456610056,
+      "min": 0.0,
+      "25%": 0.0,
+      "50%": 0.0,
+      "75%": 0.0,
+      "max": 82.0
+    },
+    "comments_7d": {
+      "count": 1511968.0,
+      "mean": 0.8396421088277001,
+      "std": 5.812457268483839,
+      "min": 0.0,
+      "25%": 0.0,
+      "50%": 0.0,
+      "75%": 0.0,
+      "max": 2410.0
+    }
+  }
+}
