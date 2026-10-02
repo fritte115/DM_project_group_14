@@ -1,0 +1,238 @@
+{
+  "accounts": 16475,
+  "correlation_log_followers_vs_log_engagement": 0.12465128643465966,
+  "top_followed": [
+    {
+      "author_id": "br3adman",
+      "follower_count": 75079,
+      "cluster_name": "Baseline",
+      "mean_engagement": 0.0483870967741935,
+      "engagement_rate": 0.0483870967741935
+    },
+    {
+      "author_id": "malikimrana1",
+      "follower_count": 70248,
+      "cluster_name": "Baseline",
+      "mean_engagement": 0.0217391304347826,
+      "engagement_rate": 0.0217391304347826
+    },
+    {
+      "author_id": "sonergonul",
+      "follower_count": 69214,
+      "cluster_name": "High value",
+      "mean_engagement": 4.520833333333333,
+      "engagement_rate": 0.7708333333333334
+    },
+    {
+      "author_id": "phasuk111",
+      "follower_count": 67616,
+      "cluster_name": "Baseline",
+      "mean_engagement": 0.032258064516129,
+      "engagement_rate": 0.032258064516129
+    },
+    {
+      "author_id": "mashable",
+      "follower_count": 48650,
+      "cluster_name": "Baseline",
+      "mean_engagement": 0.3829787234042553,
+      "engagement_rate": 0.3404255319148936
+    },
+    {
+      "author_id": "alpb",
+      "follower_count": 46110,
+      "cluster_name": "Baseline",
+      "mean_engagement": 0.4,
+      "engagement_rate": 0.4
+    },
+    {
+      "author_id": "kimkardashian",
+      "follower_count": 44571,
+      "cluster_name": "Low value",
+      "mean_engagement": 0.0737704918032786,
+      "engagement_rate": 0.0737704918032786
+    },
+    {
+      "author_id": "uforella",
+      "follower_count": 42814,
+      "cluster_name": "High value",
+      "mean_engagement": 3.0434782608695654,
+      "engagement_rate": 0.8913043478260869
+    },
+    {
+      "author_id": "nickcodipietro",
+      "follower_count": 40073,
+      "cluster_name": "Low value",
+      "mean_engagement": 0.8613861386138614,
+      "engagement_rate": 0.5808580858085809
+    },
+    {
+      "author_id": "leolaporte",
+      "follower_count": 39091,
+      "cluster_name": "High value",
+      "mean_engagement": 2.2233009708737863,
+      "engagement_rate": 0.7572815533980582
+    },
+    {
+      "author_id": "barackobama",
+      "follower_count": 37999,
+      "cluster_name": "High value",
+      "mean_engagement": 1.4220183486238531,
+      "engagement_rate": 0.6972477064220184
+    },
+    {
+      "author_id": "jsin",
+      "follower_count": 37458,
+      "cluster_name": "Baseline",
+      "mean_engagement": 0.0212765957446808,
+      "engagement_rate": 0.0212765957446808
+    },
+    {
+      "author_id": "theguruseye",
+      "follower_count": 34992,
+      "cluster_name": "Low value",
+      "mean_engagement": 0.0018083182640144,
+      "engagement_rate": 0.0018083182640144
+    },
+    {
+      "author_id": "spaceastronautics",
+      "follower_count": 33194,
+      "cluster_name": "Baseline",
+      "mean_engagement": 0.3666666666666666,
+      "engagement_rate": 0.2666666666666666
+    },
+    {
+      "author_id": "bejoyru",
+      "follower_count": 32823,
+      "cluster_name": "Baseline",
+      "mean_engagement": 0.1111111111111111,
+      "engagement_rate": 0.1111111111111111
+    },
+    {
+      "author_id": "kevinrose",
+      "follower_count": 31966,
+      "cluster_name": "High value",
+      "mean_engagement": 1.4,
+      "engagement_rate": 0.6
+    },
+    {
+      "author_id": "courtneyengle",
+      "follower_count": 31873,
+      "cluster_name": "Low value",
+      "mean_engagement": 0.0392156862745098,
+      "engagement_rate": 0.0392156862745098
+    },
+    {
+      "author_id": "billromanos",
+      "follower_count": 30544,
+      "cluster_name": "Baseline",
+      "mean_engagement": 0.2179487179487179,
+      "engagement_rate": 0.1923076923076923
+    },
+    {
+      "author_id": "ridwan2906",
+      "follower_count": 29947,
+      "cluster_name": "Low value",
+      "mean_engagement": 0.0024968789013732,
+      "engagement_rate": 0.0024968789013732
+    },
+    {
+      "author_id": "veronicabelmont",
+      "follower_count": 29875,
+      "cluster_name": "High value",
+      "mean_engagement": 6.170731707317073,
+      "engagement_rate": 0.9146341463414634
+    }
+  ],
+  "top_recommended_targets": [
+    {
+      "author_id": "wishiwerel33t",
+      "follower_count": 17,
+      "mean_engagement": 199.48717948717947,
+      "engagement_rate": 1.0
+    },
+    {
+      "author_id": "karo3005",
+      "follower_count": 4,
+      "mean_engagement": 97.0,
+      "engagement_rate": 1.0
+    },
+    {
+      "author_id": "thevampirella",
+      "follower_count": 3,
+      "mean_engagement": 73.25,
+      "engagement_rate": 0.8333333333333334
+    },
+    {
+      "author_id": "democracy1987",
+      "follower_count": 62,
+      "mean_engagement": 57.57142857142857,
+      "engagement_rate": 0.8857142857142857
+    },
+    {
+      "author_id": "cicap",
+      "follower_count": 288,
+      "mean_engagement": 48.0,
+      "engagement_rate": 1.0
+    },
+    {
+      "author_id": "salihk",
+      "follower_count": 43,
+      "mean_engagement": 41.8,
+      "engagement_rate": 0.8
+    },
+    {
+      "author_id": "tahaakcakaya",
+      "follower_count": 466,
+      "mean_engagement": 36.20512820512821,
+      "engagement_rate": 0.9230769230769232
+    },
+    {
+      "author_id": "s0r3na",
+      "follower_count": 327,
+      "mean_engagement": 34.0,
+      "engagement_rate": 1.0
+    },
+    {
+      "author_id": "werewolff",
+      "follower_count": 149,
+      "mean_engagement": 33.81818181818182,
+      "engagement_rate": 0.9393939393939394
+    },
+    {
+      "author_id": "pdrm",
+      "follower_count": 80,
+      "mean_engagement": 33.65714285714286,
+      "engagement_rate": 0.9142857142857144
+    },
+    {
+      "author_id": "aynebilim",
+      "follower_count": 1287,
+      "mean_engagement": 33.02153110047847,
+      "engagement_rate": 0.9641148325358851
+    },
+    {
+      "author_id": "pelinipcioglu",
+      "follower_count": 817,
+      "mean_engagement": 32.148148148148145,
+      "engagement_rate": 0.8950617283950617
+    },
+    {
+      "author_id": "niyayesh1",
+      "follower_count": 27,
+      "mean_engagement": 30.5,
+      "engagement_rate": 1.0
+    },
+    {
+      "author_id": "youlio",
+      "follower_count": 712,
+      "mean_engagement": 29.666666666666668,
+      "engagement_rate": 0.8888888888888888
+    },
+    {
+      "author_id": "moreclick",
+      "follower_count": 58,
+      "mean_engagement": 29.0,
+      "engagement_rate": 1.0
+    }
+  ]
+}

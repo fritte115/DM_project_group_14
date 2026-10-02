@@ -17,6 +17,8 @@ COMMENT_COLUMNS = (
     "PostID", "EntryID", "PostedBy", "SourceName", "SourceURL",
     "GeoX", "GeoY", "Timestamp", "Text",
 )
+FOLLOWING_COLUMNS = ("follower_id", "followed_id", "Timestamp")
+SUBSCRIPTION_COLUMNS = ("subscriber_id", "subscribed_to_id")
 
 
 def read_users(path: str | Path) -> Iterator[dict[str, str]]:
@@ -77,6 +79,36 @@ def read_comments(path: str | Path) -> Iterator[dict[str, str]]:
                     f"förväntade {len(COMMENT_COLUMNS)} fält, fick {len(row)}."
                 )
             yield dict(zip(COMMENT_COLUMNS, row))
+
+
+def read_following(path: str | Path) -> Iterator[dict[str, str]]:
+    path = Path(path).expanduser()
+    csv.field_size_limit(max(csv.field_size_limit(), 16 * 1024 * 1024))
+
+    with path.open(encoding="utf-8-sig", newline="") as file:
+        reader = csv.reader(file, delimiter="\t", quoting=csv.QUOTE_NONE)
+        for row in reader:
+            if len(row) != len(FOLLOWING_COLUMNS):
+                raise ValueError(
+                    f"{path}, rad {reader.line_num}: "
+                    f"förväntade {len(FOLLOWING_COLUMNS)} fält, fick {len(row)}."
+                )
+            yield dict(zip(FOLLOWING_COLUMNS, row))
+
+
+def read_subscriptions(path: str | Path) -> Iterator[dict[str, str]]:
+    path = Path(path).expanduser()
+    csv.field_size_limit(max(csv.field_size_limit(), 16 * 1024 * 1024))
+
+    with path.open(encoding="utf-8-sig", newline="") as file:
+        reader = csv.reader(file, delimiter=",", quoting=csv.QUOTE_NONE)
+        for row in reader:
+            if len(row) != len(SUBSCRIPTION_COLUMNS):
+                raise ValueError(
+                    f"{path}, rad {reader.line_num}: "
+                    f"förväntade {len(SUBSCRIPTION_COLUMNS)} fält, fick {len(row)}."
+                )
+            yield dict(zip(SUBSCRIPTION_COLUMNS, row))
 
 
 def main():
