@@ -1,14 +1,10 @@
 from __future__ import annotations
-
 import csv
 from collections import defaultdict
 from pathlib import Path
-
 from src.transform import POST_END, POST_START
 
-
 WINDOW_DAYS = (POST_END - POST_START).days
-
 
 def read_posts(path: str | Path):
     path = Path(path).expanduser()
@@ -27,12 +23,9 @@ def read_posts(path: str | Path):
                 "has_video": row["has_video"],
             }
 
-
 def build_user_features(posts):
-    stats = defaultdict(lambda: {
-        "post_count": 0, "likes_total": 0, "comments_total": 0,
-        "posts_with_engagement": 0, "engagement_sq_total": 0,
-    })
+    stats = defaultdict(lambda: {"post_count": 0, "likes_total": 0, "comments_total": 0, "posts_with_engagement": 0, "engagement_sq_total": 0})
+    
     for post in posts:
         author = stats[post["author_id"]]
         engagement = post["likes_7d"] + post["comments_7d"]
@@ -62,7 +55,6 @@ def build_user_features(posts):
             "posts_per_day": post_count / WINDOW_DAYS,
         }
     return features
-
 
 def detect_bots(features, max_posts_per_day):
     return {

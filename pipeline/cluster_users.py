@@ -2,7 +2,6 @@ import argparse
 import csv
 import json
 from pathlib import Path
-
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -11,12 +10,10 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.metrics import davies_bouldin_score, silhouette_score
 from sklearn.preprocessing import RobustScaler
-
 from pipeline.build_posts import POST_COLUMNS
 from src.features import build_user_features, detect_bots, read_posts
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-
 
 def build_feature_table(posts_path, max_posts_per_day):
     features = build_user_features(read_posts(posts_path))
@@ -36,16 +33,12 @@ def build_feature_table(posts_path, max_posts_per_day):
     table = pd.DataFrame(rows)
     table["has_engagement"] = table["engagement_total"] > 0
 
-    # Bot detection only runs on accounts that already passed the engagement
-    # filter: posting rate is only a meaningful "bot" signal once we're
-    # looking at accounts that are otherwise sponsorship-relevant.
     engaged_features = {
         author_id: f for author_id, f in features.items() if f["engagement_total"] > 0
     }
     bots = detect_bots(engaged_features, max_posts_per_day=max_posts_per_day)
     table["is_bot"] = table["author_id"].isin(bots)
     return table
-
 
 def write_relevant_posts(posts_path, relevant_authors, output_path):
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -62,15 +55,12 @@ def write_relevant_posts(posts_path, relevant_authors, output_path):
                 rows_written += 1
     return rows_written
 
-
 def choose_k(X, k_range, sample_size, random_state):
     silhouette, inertia, davies_bouldin = {}, {}, {}
     for k in k_range:
         model = KMeans(n_clusters=k, n_init=10, random_state=random_state)
         labels = model.fit_predict(X)
-        silhouette[k] = float(
-            silhouette_score(X, labels, sample_size=min(sample_size, len(X)), random_state=random_state)
-        )
+        silhouette[k] = float(silhouette_score(X, labels, sample_size=min(sample_size, len(X)), random_state=random_state))
         inertia[k] = float(model.inertia_)
         davies_bouldin[k] = float(davies_bouldin_score(X, labels))
 
@@ -78,18 +68,13 @@ def choose_k(X, k_range, sample_size, random_state):
     best_k = max(silhouette, key=silhouette.get)
     return best_k, scores
 
-
 def name_clusters(active):
-    # Ranked by mean_engagement, highest first. The three-way names only make
-    # sense for k=3 (our validated choice); any other k falls back to a
-    # generic, still-ranked label rather than guessing a name.
     order = active.groupby("cluster")["mean_engagement"].mean().sort_values(ascending=False).index
     if len(order) == 3:
         names = dict(zip(order, ("High value", "Baseline", "Low value")))
     else:
         names = {cluster_id: f"Tier {rank + 1} of {len(order)}" for rank, cluster_id in enumerate(order)}
     return active["cluster"].map(names)
-
 
 def cluster(table, k_range, sample_size, random_state):
     active = table[~table["is_bot"] & table["has_engagement"]].copy()
@@ -107,7 +92,6 @@ def cluster(table, k_range, sample_size, random_state):
 
     return active, best_k, scores
 
-
 def summarize_clusters(active):
     summary = active.groupby(["cluster", "cluster_name"]).agg(
         accounts=("author_id", "count"),
@@ -118,7 +102,6 @@ def summarize_clusters(active):
         median_post_count=("post_count", "median"),
     ).reset_index()
     return summary.sort_values("mean_engagement", ascending=False)
-
 
 def plot_clusters(active, output_dir):
     categories = active["cluster_name"].astype("category")
@@ -139,7 +122,6 @@ def plot_clusters(active, output_dir):
     fig.tight_layout()
     fig.savefig(output_dir / "user_clusters_scatter.png", dpi=150)
     plt.close(fig)
-
 
 def plot_k_selection(scores, output_dir):
     ks = sorted(scores["silhouette"])
@@ -165,44 +147,31 @@ def plot_k_selection(scores, output_dir):
     fig.savefig(output_dir / "k_selection.png", dpi=150)
     plt.close(fig)
 
-
 def run(posts_path, output_dir, relevant_posts_path, max_posts_per_day, k_range, sample_size, random_state):
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print("Bygger konto-funktioner från posts.csv …", flush=True)
     table = build_feature_table(posts_path, max_posts_per_day)
     n_no_engagement = int((~table["has_engagement"]).sum())
     n_bots = int(table["is_bot"].sum())
     n_active = int((table["has_engagement"] & ~table["is_bot"]).sum())
     print(
-        f"Konton totalt: {len(table):,}\n"
-        f"  1) Uteslutna utan något engagemang alls (inte sponsringsrelevanta): {n_no_engagement:,}\n"
-        f"  2) Uteslutna som bottar bland engagerade konton "
-        f"(> {max_posts_per_day:.1f} inlägg/dag): {n_bots:,}\n"
-        f"  Kvar för klustring: {n_active:,}",
+        f"Total amount of accounts: {len(table):,}\n"
+        f"Removed due to no engagement: {n_no_engagement:,}\n"
+        f"Removed due to bot accounts "
+        f"(> {max_posts_per_day:.1f} posts/day): {n_bots:,}\n"
+        f"Still relevant for clustering: {n_active:,}",
         flush=True,
     )
 
     relevant_authors = set(table.loc[table["has_engagement"] & ~table["is_bot"], "author_id"])
-    print(f"Skriver inlägg från relevanta konton till {relevant_posts_path} …", flush=True)
     posts_written = write_relevant_posts(posts_path, relevant_authors, relevant_posts_path)
-    print(f"  {posts_written:,} inlägg skrivna.", flush=True)
-
-    print("Klustrar aktiva konton …", flush=True)
     active, best_k, scores = cluster(table, k_range, sample_size, random_state)
 
     best_k_by_davies_bouldin = min(scores["davies_bouldin"], key=scores["davies_bouldin"].get)
-    print("\n--- VAL AV k (silhouette väljer, elbow/Davies-Bouldin som kontroll) ---")
-    print(f"{'k':>3} {'inertia':>12} {'silhouette':>12} {'davies_bouldin':>15}")
-    for k in sorted(scores["silhouette"]):
-        print(
-            f"{k:>3} {scores['inertia'][k]:>12,.1f} "
-            f"{scores['silhouette'][k]:>12.4f} {scores['davies_bouldin'][k]:>15.4f}"
-        )
-    print(f"Valt k (silhouette): {best_k}  |  bästa k enligt Davies-Bouldin: {best_k_by_davies_bouldin}")
+    print(f"Chosen k (silhouette): {best_k}, Best k according to Davies-Bouldin: {best_k_by_davies_bouldin}")
 
     summary = summarize_clusters(active)
-    print("\n--- KLUSTERSAMMANFATTNING ---")
+    print("\n Cluster Summary")
     print(summary.to_string(index=False))
 
     plot_clusters(active, output_dir)
@@ -229,9 +198,8 @@ def run(posts_path, output_dir, relevant_posts_path, max_posts_per_day, k_range,
     (output_dir / "clustering_report.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
     )
-    print(f"\nResultat sparade i {output_dir}")
+    print(f"\nResults saved in {output_dir}")
     return report
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -264,8 +232,7 @@ def main():
             range(args.min_k, args.max_k + 1), args.sample_size, args.random_state,
         )
     except (OSError, UnicodeError, ValueError) as error:
-        parser.exit(1, f"Kunde inte slutföra klustringen: {error}\n")
-
+        parser.exit(1, f"Could not complete clustering: {error}\n")
 
 if __name__ == "__main__":
     main()

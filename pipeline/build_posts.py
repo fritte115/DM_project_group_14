@@ -4,7 +4,6 @@ import json
 from collections import Counter
 from pathlib import Path
 from tempfile import TemporaryDirectory
-
 from src.extract import read_comments, read_entries, read_likes, read_users
 from src.transform import (
     OBSERVATION_END, POST_END, POST_START, RESPONSE_WINDOW,
@@ -13,11 +12,7 @@ from src.transform import (
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-POST_COLUMNS = (
-    "post_id", "author_id", "published_at", "likes_7d", "comments_7d",
-    "has_image", "has_video",
-)
-
+POST_COLUMNS = ("post_id", "author_id", "published_at", "likes_7d", "comments_7d", "has_image", "has_video")
 
 def media_flag(value, field, stats):
     if value.strip().lower() in ("", "null", "\\n"):
@@ -32,7 +27,6 @@ def media_flag(value, field, stats):
         return ""
     return int(count > 0)
 
-
 def response_status(post, actor, timestamp):
     if isinstance(post, str):
         return post
@@ -45,21 +39,18 @@ def response_status(post, actor, timestamp):
         return "outside_response_window"
     return "included"
 
-
 def build_posts(data_dir, output_dir):
     data_dir = Path(data_dir).expanduser().resolve()
     output_dir = Path(output_dir).expanduser().resolve()
-    if output_dir.exists():
-        raise FileExistsError(f"Resultatmappen finns redan: {output_dir}")
-    filenames = (
-        "users.csv", "likes.csv", "commentAugSept.csv",
-        "entries1.csv", "entries2.csv", "entries3.csv",
-    )
+    if output_dir.exists(): raise FileExistsError(f"Result directory already existing: {output_dir}")
+
+    filenames = ("users.csv", "likes.csv", "commentAugSept.csv", "entries1.csv", "entries2.csv", "entries3.csv")
+
     for name in filenames:
         if not (data_dir / name).is_file():
             raise FileNotFoundError(data_dir / name)
 
-    print("Läser konton …", flush=True)
+    print("Reading accounts ...", flush=True)
     users = {row["id"]: row["type"] for row in clean_users(read_users(data_dir / "users.csv"))}
     report = {
         "rules": {
@@ -91,7 +82,6 @@ def build_posts(data_dir, output_dir):
         ("likes", read_likes, "likes.csv", "PostID"),
         ("comments", read_comments, "commentAugSept.csv", "EntryID"),
     ):
-        print(f"Samlar inläggsreferenser från {filename} …", flush=True)
         for row in reader(data_dir / filename):
             posts[row[post_column]] = "missing_post"
             report[name]["raw_rows"] += 1
@@ -100,16 +90,22 @@ def build_posts(data_dir, output_dir):
     with TemporaryDirectory(prefix=".post-table-", dir=output_dir.parent) as temp:
         stage = Path(temp)
         base_path = stage / "base.csv"
+
         with base_path.open("w", encoding="utf-8", newline="") as file:
             writer = csv.writer(file)
+
             for filename in ("entries1.csv", "entries2.csv", "entries3.csv"):
-                print(f"Läser {filename} …", flush=True)
+                print(f"Reading {filename} ...", flush=True)
+
                 for number, entry in enumerate(read_entries(data_dir / filename), start=1):
                     report["entries"]["raw_rows"] += 1
                     post_id, author = entry["PostID"], entry["PostedBy"]
+
                     if post_id.strip().lower() in ("", "null", "\\n"):
-                        raise ValueError(f"{filename}, rad {number}: saknat PostID")
+                        raise ValueError(f"{filename}, row {number}: missing PostID")
+                    
                     published_at = parse_timestamp(entry["Timestamp"])
+
                     if not POST_START <= published_at < POST_END:
                         status = "post_outside_period"
                     elif author not in users:
@@ -118,7 +114,9 @@ def build_posts(data_dir, output_dir):
                         status = "group_author"
                     else:
                         status = "included"
+
                     report["entries"][status] += 1
+
                     if post_id in posts:
                         posts[post_id] = (author, published_at) if status == "included" else status
                     if status == "included":
@@ -127,37 +125,39 @@ def build_posts(data_dir, output_dir):
                             media_flag(entry["NumImg"], "image", report["media"]),
                             media_flag(entry["NumVideo"], "video", report["media"]),
                         ])
-                    if number % 500_000 == 0:
-                        print(f"  {number:,} rader lästa", flush=True)
 
         counts = {"likes": Counter(), "comments": Counter()}
+
         for name, rows, post_column, actor_column in (
             ("likes", clean_likes(read_likes(data_dir / "likes.csv")), "PostID", "userID"),
             ("comments", read_comments(data_dir / "commentAugSept.csv"), "EntryID", "PostedBy"),
         ):
-            print(f"Räknar {name} …", flush=True)
+            print(f"Counting {name} ...", flush=True)
+
             for row in rows:
                 report[name]["evaluated_rows"] += 1
                 post_id, actor = row[post_column], row[actor_column]
+
                 if actor.strip().lower() in ("", "null", "\\n"):
-                    raise ValueError(f"{name}: respons saknar konto-ID")
+                    raise ValueError(f"{name}: response missing accountID")
+                
                 timestamp = row["Timestamp"] if name == "likes" else parse_timestamp(row["Timestamp"])
                 status = response_status(posts[post_id], actor, timestamp)
                 report[name][status] += 1
+
                 if status == "included":
                     counts[name][post_id] += 1
                     if actor not in users:
                         report[name]["included_unknown_actor"] += 1
-        report["likes"]["duplicate_rows_removed"] = (
-            report["likes"]["raw_rows"] - report["likes"]["evaluated_rows"]
-        )
+
+        report["likes"]["duplicate_rows_removed"] = (report["likes"]["raw_rows"] - report["likes"]["evaluated_rows"])
         del posts, users
 
-        print("Sparar inläggstabellen …", flush=True)
         with base_path.open(encoding="utf-8", newline="") as source:
             with (stage / "posts.csv").open("w", encoding="utf-8", newline="") as target:
                 writer = csv.writer(target)
                 writer.writerow(POST_COLUMNS)
+
                 for post_id, author, published_at, image, video in csv.reader(source):
                     likes = counts["likes"].get(post_id, 0)
                     comments = counts["comments"].get(post_id, 0)
@@ -172,6 +172,7 @@ def build_posts(data_dir, output_dir):
         assert report["output"]["likes_7d"] == report["likes"]["included"]
         assert report["output"]["comments_7d"] == report["comments"]["included"]
         base_path.unlink()
+        
         (stage / "report.json").write_text(
             json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
         )
@@ -179,9 +180,9 @@ def build_posts(data_dir, output_dir):
 
     for key, count in report["output"].items():
         print(f"{key}: {count:,}")
-    print(f"Resultat: {output_dir}")
-    return report
 
+    print(f"Result: {output_dir}")
+    return report
 
 def main():
     parser = argparse.ArgumentParser()
@@ -192,8 +193,7 @@ def main():
     try:
         build_posts(args.data_dir, output_dir)
     except (OSError, UnicodeError, ValueError, csv.Error) as error:
-        parser.exit(1, f"Kunde inte bygga inläggstabellen: {error}\n")
-
+        parser.exit(1, f"Could not build the entry table: {error}\n")
 
 if __name__ == "__main__":
     main()
