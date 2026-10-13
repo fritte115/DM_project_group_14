@@ -1,35 +1,28 @@
 import argparse
 import json
 from pathlib import Path
-
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 from src.extract import read_following, read_subscriptions
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-
 
 def count_followers(data_dir, relevant_authors):
     followers = {author_id: set() for author_id in relevant_authors}
 
-    print("Läser followingAugSept.csv …", flush=True)
     for row in read_following(data_dir / "followingAugSept.csv"):
         followed = row["followed_id"]
         if followed in followers:
             followers[followed].add(row["follower_id"])
 
-    print("Läser subscriptions.csv …", flush=True)
     for row in read_subscriptions(data_dir / "subscriptions.csv"):
         subscribed_to = row["subscribed_to_id"]
         if subscribed_to in followers:
             followers[subscribed_to].add(row["subscriber_id"])
 
     return {author_id: len(ids) for author_id, ids in followers.items()}
-
 
 def run(clusters_path, data_dir, output_dir, top_n, top_targets_n):
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -44,7 +37,7 @@ def run(clusters_path, data_dir, output_dir, top_n, top_targets_n):
     log_followers = np.log1p(clusters["follower_count"])
     log_engagement = np.log1p(clusters["mean_engagement"])
     correlation = float(np.corrcoef(log_followers, log_engagement)[0, 1])
-    print(f"\nKorrelation log(följare) vs log(engagemang per inlägg): {correlation:.4f}")
+    print(f"\nCorrelation log(follower) vs log(engagement/post): {correlation:.4f}")
 
     fig, ax = plt.subplots(figsize=(7, 5))
     scatter = ax.scatter(
@@ -60,10 +53,6 @@ def run(clusters_path, data_dir, output_dir, top_n, top_targets_n):
     fig.savefig(output_dir / "followers_vs_engagement.png", dpi=150)
     plt.close(fig)
 
-    # The "final" graph: the full population faint in the background, with
-    # only the top-N most-followed accounts highlighted and labeled, to make
-    # one specific point legible: the biggest accounts land in all three
-    # clusters, not just "High value".
     if "posts_per_day" in clusters.columns:
         cat_list = list(categories.cat.categories)
         cmap = plt.get_cmap("tab10")
@@ -88,10 +77,6 @@ def run(clusters_path, data_dir, output_dir, top_n, top_targets_n):
                 textcoords="offset points", xytext=(6, 4), fontsize=7, zorder=4,
             )
 
-        # The actual recommendation: the top accounts, by mean engagement,
-        # within whichever cluster has the highest average engagement (the
-        # "High value" cluster at k=3) - the concrete answer to "who should a
-        # sponsor target", shown alongside the top-followed accounts above.
         top_cluster_name = clusters.groupby(label_column)["mean_engagement"].mean().idxmax()
         top_targets_plot = (
             clusters[clusters[label_column] == top_cluster_name]
@@ -130,24 +115,12 @@ def run(clusters_path, data_dir, output_dir, top_n, top_targets_n):
         plt.close(fig)
 
     top_followed = clusters.sort_values("follower_count", ascending=False).head(top_n)
-    print(f"\n--- TOP {top_n} EFTER FÖLJARANTAL ---")
-    print(
-        top_followed[[
-            "author_id", "follower_count", label_column, "mean_engagement", "engagement_rate",
-        ]].to_string(index=False)
-    )
 
     top_cluster_name = clusters.groupby(label_column)["mean_engagement"].mean().idxmax()
     top_targets = (
         clusters[clusters[label_column] == top_cluster_name]
         .sort_values("mean_engagement", ascending=False)
         .head(top_targets_n)
-    )
-    print(f"\n--- TOP {top_targets_n} REKOMMENDERADE KONTON ('{top_cluster_name}') ---")
-    print(
-        top_targets[[
-            "author_id", "follower_count", "mean_engagement", "engagement_rate",
-        ]].to_string(index=False)
     )
 
     clusters.to_csv(output_dir / "user_clusters_with_followers.csv", index=False)
@@ -164,9 +137,8 @@ def run(clusters_path, data_dir, output_dir, top_n, top_targets_n):
     (output_dir / "follower_check_report.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
     )
-    print(f"\nResultat sparade i {output_dir}")
+    print(f"\nResults saved in {output_dir}")
     return report
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -188,8 +160,7 @@ def main():
     try:
         run(args.clusters_path, args.data_dir, args.output_dir, args.top_n, args.top_targets_n)
     except (OSError, UnicodeError, ValueError) as error:
-        parser.exit(1, f"Kunde inte slutföra följarkontrollen: {error}\n")
-
+        parser.exit(1, f"Could not finish follower check: {error}\n")
 
 if __name__ == "__main__":
     main()
