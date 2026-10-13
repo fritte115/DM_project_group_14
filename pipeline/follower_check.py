@@ -10,6 +10,8 @@ import pandas as pd
 
 from src.extract import read_following, read_subscriptions
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
 
 def count_followers(data_dir, relevant_authors):
     followers = {author_id: set() for author_id in relevant_authors}
@@ -170,15 +172,15 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--clusters-path", type=Path,
-        default=Path(__file__).resolve().parent / "reports" / "clusters" / "user_clusters.csv",
+        default=PROJECT_ROOT / "reports" / "clusters" / "user_clusters.csv",
     )
     parser.add_argument(
         "--data-dir", type=Path,
-        default=Path(__file__).resolve().parent / "data",
+        default=PROJECT_ROOT / "data",
     )
     parser.add_argument(
         "--output-dir", type=Path,
-        default=Path(__file__).resolve().parent / "reports" / "followers",
+        default=PROJECT_ROOT / "reports" / "followers",
     )
     parser.add_argument("--top-n", type=int, default=20)
     parser.add_argument("--top-targets-n", type=int, default=15)

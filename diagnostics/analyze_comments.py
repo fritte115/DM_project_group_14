@@ -113,7 +113,7 @@ def analyze(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--file", type=Path,
-                        default=Path(__file__).resolve().parent / "data" / "commentAugSept.csv")
+                        default=Path(__file__).resolve().parent.parent / "data" / "commentAugSept.csv")
     args = parser.parse_args()
     try:
         analyze(args.file.expanduser())

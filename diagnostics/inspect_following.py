@@ -61,7 +61,7 @@ def inspect(path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", type=Path,
-                        default=Path(__file__).resolve().parent / "data")
+                        default=Path(__file__).resolve().parent.parent / "data")
     args = parser.parse_args()
     for name in FILES:
         try:

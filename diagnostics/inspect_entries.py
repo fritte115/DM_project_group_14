@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--file",
     type=Path,
-    default=Path(__file__).resolve().parent / "data" / "entries3.csv",
+    default=Path(__file__).resolve().parent.parent / "data" / "entries3.csv",
 )
 args = parser.parse_args()
 file_path = args.file.expanduser()

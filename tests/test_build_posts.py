@@ -5,7 +5,7 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from build_posts import build_posts
+from pipeline.build_posts import build_posts
 
 
 def write_rows(path, rows, delimiter="\t"):

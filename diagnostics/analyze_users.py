@@ -2,7 +2,7 @@ import csv
 from collections import Counter
 from pathlib import Path
 
-file_path = Path(__file__).resolve().parent / "data" / "users.csv"
+file_path = Path(__file__).resolve().parent.parent / "data" / "users.csv"
 
 total_rows = 0
 valid_rows = 0

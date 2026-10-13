@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import csv
 from collections import defaultdict
 from pathlib import Path

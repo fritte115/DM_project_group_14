@@ -157,7 +157,7 @@ def print_file_result(result):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, default=Path(__file__).resolve().parent / "data")
+    parser.add_argument("--data-dir", type=Path, default=Path(__file__).resolve().parent.parent / "data")
     parser.add_argument("--report", type=Path, help="Valfri sökväg till en ny JSON-fil med resultaten")
     args = parser.parse_args()
     if args.report and args.report.exists():

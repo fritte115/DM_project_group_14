@@ -10,6 +10,8 @@ import pandas as pd
 
 from src.features import WINDOW_DAYS, build_user_features, read_posts
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
 
 def load_posts(path):
     return pd.read_csv(
@@ -147,11 +149,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--posts-path", type=Path,
-        default=Path(__file__).resolve().parent / "data" / "processed" / "post_table" / "posts.csv",
+        default=PROJECT_ROOT / "data" / "processed" / "post_table" / "posts.csv",
     )
     parser.add_argument(
         "--output-dir", type=Path,
-        default=Path(__file__).resolve().parent / "reports" / "eda",
+        default=PROJECT_ROOT / "reports" / "eda",
     )
     args = parser.parse_args()
     try:

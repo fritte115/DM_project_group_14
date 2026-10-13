@@ -17,7 +17,22 @@ Companies deciding where to spend sponsorship money on social platforms typicall
 
 The time rules are implemented in `src/transform.py`. `filter_entries` selects posts and converts their timestamps to Python datetime values. `is_response_in_window` checks a response against a post's publication time; both arguments must be datetime values. Invalid or missing timestamps raise an error rather than being silently dropped.
 
-The raw-data checks in `check_links.py` still cover all dates. `build_posts.py` applies the analysis rules to create the post-level response table.
+The raw-data checks in `diagnostics/check_links.py` still cover all dates.
+`pipeline/build_posts.py` applies the analysis rules to create the post-level
+response table.
+
+# Project structure
+
+- `pipeline/`: the three executable stages used for the final result.
+- `analysis/`: optional exploratory analysis and figures.
+- `diagnostics/`: one-off raw-data inspection and quality checks.
+- `src/`: reusable readers, transformations, and feature engineering.
+- `tests/`: automated fixture tests.
+- `reports/`: generated and committed analysis outputs.
+- `data/`: local raw and processed data, excluded from Git.
+
+Run commands from the project root using module syntax so imports and default
+paths resolve consistently.
 
 # Cleaning rules
 
@@ -34,7 +49,7 @@ The cleaning functions do not modify or save raw files. They hold account or lik
 Run from the project root with Python 3.10 or newer (no third-party packages required):
 
 ```bash
-python3 build_posts.py
+python3 -m pipeline.build_posts
 ```
 
 Outputs are saved under `data/processed/post_table/`, which is ignored by Git:
@@ -61,7 +76,27 @@ Exclusion categories in the report are mutually exclusive, applied in this order
 The script reads data in stages and temporarily saves selected posts on disk. In memory it retains account IDs, referenced-post metadata and response counts rather than full entry text. Output row and response totals are reconciled before the completed output folder is made available. Existing output folders are not overwritten; use a different folder for another run:
 
 ```bash
-python3 build_posts.py --output-dir data/processed/post_table_v2
+python3 -m pipeline.build_posts --output-dir data/processed/post_table_v2
+```
+
+The remaining final pipeline stages are:
+
+```bash
+python3 -m pipeline.cluster_users
+python3 -m pipeline.follower_check
+```
+
+Optional exploratory analysis:
+
+```bash
+python3 -m analysis.analyze_posts
+```
+
+Diagnostics are also run as modules, for example:
+
+```bash
+python3 -m diagnostics.check_links
+python3 -m diagnostics.analyze_entries
 ```
 
 Run the small fixture test with:

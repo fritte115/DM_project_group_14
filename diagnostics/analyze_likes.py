@@ -3,7 +3,7 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
-file_path = Path(__file__).resolve().parent / "data" / "likes.csv"
+file_path = Path(__file__).resolve().parent.parent / "data" / "likes.csv"
 
 total_rows = 0
 valid_rows = 0

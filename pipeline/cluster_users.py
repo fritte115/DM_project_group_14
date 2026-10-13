@@ -12,8 +12,10 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import davies_bouldin_score, silhouette_score
 from sklearn.preprocessing import RobustScaler
 
-from build_posts import POST_COLUMNS
+from pipeline.build_posts import POST_COLUMNS
 from src.features import build_user_features, detect_bots, read_posts
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
 def build_feature_table(posts_path, max_posts_per_day):
@@ -235,11 +237,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--posts-path", type=Path,
-        default=Path(__file__).resolve().parent / "data" / "processed" / "post_table" / "posts.csv",
+        default=PROJECT_ROOT / "data" / "processed" / "post_table" / "posts.csv",
     )
     parser.add_argument(
         "--output-dir", type=Path,
-        default=Path(__file__).resolve().parent / "reports" / "clusters",
+        default=PROJECT_ROOT / "reports" / "clusters",
     )
     parser.add_argument(
         "--relevant-posts-path", type=Path,

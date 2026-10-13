@@ -186,7 +186,7 @@ def analyze(data_dir, temp_dir=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, default=Path(__file__).resolve().parent / "data")
+    parser.add_argument("--data-dir", type=Path, default=Path(__file__).resolve().parent.parent / "data")
     parser.add_argument("--temp-dir", type=Path, help="Befintlig mapp med ledigt utrymme för temporära filer")
     args = parser.parse_args()
     try:

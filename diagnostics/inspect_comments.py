@@ -73,7 +73,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--file", type=Path,
-        default=Path(__file__).resolve().parent / "data" / "commentAugSept.csv",
+        default=Path(__file__).resolve().parent.parent / "data" / "commentAugSept.csv",
     )
     args = parser.parse_args()
     try:

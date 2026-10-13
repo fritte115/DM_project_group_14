@@ -11,6 +11,7 @@ from src.transform import (
     clean_likes, clean_users, is_response_in_window, parse_timestamp,
 )
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 POST_COLUMNS = (
     "post_id", "author_id", "published_at", "likes_7d", "comments_7d",
@@ -184,7 +185,7 @@ def build_posts(data_dir, output_dir):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data-dir", type=Path, default=Path(__file__).resolve().parent / "data")
+    parser.add_argument("--data-dir", type=Path, default=PROJECT_ROOT / "data")
     parser.add_argument("--output-dir", type=Path)
     args = parser.parse_args()
     output_dir = args.output_dir or args.data_dir.expanduser() / "processed" / "post_table"
