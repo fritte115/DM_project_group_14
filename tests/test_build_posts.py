@@ -77,6 +77,12 @@ class BuildPostsTests(unittest.TestCase):
             self.assertEqual(report["likes"]["before_publication"], 1)
             self.assertEqual(report["likes"]["included_unknown_actor"], 2)
             self.assertEqual(report["output"]["zero_response_posts"], 1)
+            with (output / "responders.csv").open(newline="") as file:
+                responders = {
+                    (row["author_id"], row["responder_id"]): row["responses_7d"]
+                    for row in csv.DictReader(file)
+                }
+            self.assertEqual(responders, {("a", "b"): "3", ("a", "e"): "1"})
             self.assertEqual(before, {name: (data / name).read_bytes() for name in before})
             with self.assertRaises(FileExistsError):
                 build_posts(data, output)

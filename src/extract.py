@@ -1,14 +1,10 @@
 from __future__ import annotations
-import argparse
 import csv
 from collections.abc import Iterator
-from itertools import islice
 from pathlib import Path
-from pprint import pprint
 
 USER_COLUMNS = ("id", "type", "name", "reserved", "description")
 ENTRY_COLUMNS = ("PostID", "PostedBy", "SourceName", "SourceURL", "GeoX", "GeoY", "Timestamp", "Text", "NumImg", "ImgURL", "NumVideo", "VideoURL")
-DEFAULT_USERS_PATH = Path(__file__).resolve().parent.parent / "data" / "users.csv"
 LIKE_COLUMNS = ("userID", "PostID", "Timestamp")
 COMMENT_COLUMNS = ("PostID", "EntryID", "PostedBy", "SourceName", "SourceURL", "GeoX", "GeoY", "Timestamp", "Text")
 FOLLOWING_COLUMNS = ("follower_id", "followed_id", "Timestamp")
@@ -97,20 +93,3 @@ def read_subscriptions(path: str | Path) -> Iterator[dict[str, str]]:
                     f"expected {len(SUBSCRIPTION_COLUMNS)} fields, received {len(row)}."
                 )
             yield dict(zip(SUBSCRIPTION_COLUMNS, row))
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--file", type=Path, default=DEFAULT_USERS_PATH)
-    args = parser.parse_args()
-
-    rows = read_users(args.file)
-    try:
-        for row in islice(rows, 5):
-            pprint(row, sort_dicts=False)
-    except (OSError, UnicodeError, ValueError, csv.Error) as error:
-        parser.exit(1, f"Could not read users: {error}\n")
-    finally:
-        rows.close()
-
-if __name__ == "__main__":
-    main()
