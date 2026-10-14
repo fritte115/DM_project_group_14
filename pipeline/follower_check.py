@@ -1,154 +1,103 @@
 import argparse
-import json
 from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from src.extract import read_following, read_subscriptions
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# Same engagement measure the clusters are built on: small-sample means are shrunk toward the population mean.
+ENGAGEMENT = "shrunk_mean_engagement"
+# Targets within the top cluster are ranked by distinct people who engaged during the period:
+# a small group responding to everything does not inflate it. Per-post reach was not used because
+# repeat responders make it fall mechanically as an account posts more.
+TARGET_RANKING = "unique_responders"
 
-def count_followers(data_dir, relevant_authors):
-    followers = {author_id: set() for author_id in relevant_authors}
+def plot_final(clusters, top_followed, top_targets, top_cluster_name, output_dir):
+    cat_list = list(clusters["cluster_name"].astype("category").cat.categories)
+    cmap = plt.get_cmap("tab10")
+    color_map = {name: cmap(i) for i, name in enumerate(cat_list)}
 
-    for row in read_following(data_dir / "followingAugSept.csv"):
-        followed = row["followed_id"]
-        if followed in followers:
-            followers[followed].add(row["follower_id"])
-
-    for row in read_subscriptions(data_dir / "subscriptions.csv"):
-        subscribed_to = row["subscribed_to_id"]
-        if subscribed_to in followers:
-            followers[subscribed_to].add(row["subscriber_id"])
-
-    return {author_id: len(ids) for author_id, ids in followers.items()}
-
-def run(clusters_path, data_dir, output_dir, top_n, top_targets_n):
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    clusters = pd.read_csv(clusters_path, dtype={"author_id": str})
-    follower_counts = count_followers(data_dir, set(clusters["author_id"]))
-    clusters["follower_count"] = clusters["author_id"].map(follower_counts).fillna(0).astype(int)
-
-    label_column = "cluster_name" if "cluster_name" in clusters.columns else "cluster"
-    categories = clusters[label_column].astype("category")
-
-    log_followers = np.log1p(clusters["follower_count"])
-    log_engagement = np.log1p(clusters["mean_engagement"])
-    correlation = float(np.corrcoef(log_followers, log_engagement)[0, 1])
-    print(f"\nCorrelation log(follower) vs log(engagement/post): {correlation:.4f}")
-
-    fig, ax = plt.subplots(figsize=(7, 5))
-    scatter = ax.scatter(
-        log_followers, log_engagement, c=categories.cat.codes, cmap="tab10", s=6, alpha=0.4,
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.scatter(
+        np.log1p(clusters["posts_per_day"]), np.log1p(clusters[ENGAGEMENT]),
+        c=clusters["cluster_name"].map(color_map), s=5, alpha=0.15, edgecolors="none",
     )
-    ax.set_xlabel("log(1 + follower count)")
-    ax.set_ylabel("log(1 + mean 7-day engagement)")
-    ax.set_title(f"Followers vs. engagement (r = {correlation:.2f}), colored by cluster")
-    handles, _ = scatter.legend_elements()
-    legend = ax.legend(handles, categories.cat.categories, title="cluster", loc="upper right")
-    ax.add_artist(legend)
+
+    ax.scatter(
+        np.log1p(top_followed["posts_per_day"]), np.log1p(top_followed[ENGAGEMENT]),
+        c=top_followed["cluster_name"].map(color_map),
+        s=140, edgecolors="black", linewidths=1.0, zorder=3,
+    )
+    for _, row in top_followed.iterrows():
+        ax.annotate(
+            f"{row['author_id']} ({row['follower_count']:,})",
+            (np.log1p(row["posts_per_day"]), np.log1p(row[ENGAGEMENT])),
+            textcoords="offset points", xytext=(6, 4), fontsize=7, zorder=4,
+        )
+
+    ax.scatter(
+        np.log1p(top_targets["posts_per_day"]), np.log1p(top_targets[ENGAGEMENT]),
+        marker="*", s=320, c="gold", edgecolors="black", linewidths=1.0, zorder=5,
+    )
+    for _, row in top_targets.iterrows():
+        ax.annotate(
+            row["author_id"],
+            (np.log1p(row["posts_per_day"]), np.log1p(row[ENGAGEMENT])),
+            textcoords="offset points", xytext=(6, -11), fontsize=7, zorder=6, color="#7a5c00",
+        )
+
+    ax.set_xlabel("log(1 + posts per day)")
+    ax.set_ylabel("log(1 + shrunk mean 7-day engagement)")
+    ax.set_title(
+        f"Top {len(top_followed)} most-followed accounts (circles) vs.\n"
+        f"top {len(top_targets)} recommended targets in '{top_cluster_name}' by reach (stars)"
+    )
+    handles = [
+        plt.Line2D([0], [0], marker="o", linestyle="", color=color_map[name],
+                   label=name, markeredgecolor="black")
+        for name in cat_list
+    ]
+    handles.append(
+        plt.Line2D([0], [0], marker="*", linestyle="", color="gold",
+                   label="Recommended target", markeredgecolor="black", markersize=12)
+    )
+    ax.legend(handles=handles, title="cluster", loc="upper right")
     fig.tight_layout()
-    fig.savefig(output_dir / "followers_vs_engagement.png", dpi=150)
+    fig.savefig(output_dir / "final_clusters_with_followers.png", dpi=150)
     plt.close(fig)
 
-    if "posts_per_day" in clusters.columns:
-        cat_list = list(categories.cat.categories)
-        cmap = plt.get_cmap("tab10")
-        color_map = {name: cmap(i) for i, name in enumerate(cat_list)}
+def run(clusters_path, output_dir, top_n, top_targets_n):
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-        fig, ax = plt.subplots(figsize=(8, 6))
-        ax.scatter(
-            np.log1p(clusters["posts_per_day"]), log_engagement,
-            c=clusters[label_column].map(color_map), s=5, alpha=0.15, edgecolors="none",
-        )
+    # follower_count is computed by cluster_users, where it is also a clustering feature.
+    clusters = pd.read_csv(clusters_path, dtype={"author_id": str})
 
-        top_followed_plot = clusters.sort_values("follower_count", ascending=False).head(top_n)
-        ax.scatter(
-            np.log1p(top_followed_plot["posts_per_day"]), np.log1p(top_followed_plot["mean_engagement"]),
-            c=top_followed_plot[label_column].map(color_map),
-            s=140, edgecolors="black", linewidths=1.0, zorder=3,
-        )
-        for _, row in top_followed_plot.iterrows():
-            ax.annotate(
-                f"{row['author_id']} ({row['follower_count']:,})",
-                (np.log1p(row["posts_per_day"]), np.log1p(row["mean_engagement"])),
-                textcoords="offset points", xytext=(6, 4), fontsize=7, zorder=4,
-            )
-
-        top_cluster_name = clusters.groupby(label_column)["mean_engagement"].mean().idxmax()
-        top_targets_plot = (
-            clusters[clusters[label_column] == top_cluster_name]
-            .sort_values("mean_engagement", ascending=False)
-            .head(top_targets_n)
-        )
-        ax.scatter(
-            np.log1p(top_targets_plot["posts_per_day"]), np.log1p(top_targets_plot["mean_engagement"]),
-            marker="*", s=320, c="gold", edgecolors="black", linewidths=1.0, zorder=5,
-        )
-        for _, row in top_targets_plot.iterrows():
-            ax.annotate(
-                row["author_id"],
-                (np.log1p(row["posts_per_day"]), np.log1p(row["mean_engagement"])),
-                textcoords="offset points", xytext=(6, -11), fontsize=7, zorder=6, color="#7a5c00",
-            )
-
-        ax.set_xlabel("log(1 + posts per day)")
-        ax.set_ylabel("log(1 + mean 7-day engagement)")
-        ax.set_title(
-            f"Top {top_n} most-followed accounts (circles) vs.\n"
-            f"top {top_targets_n} recommended targets in '{top_cluster_name}' (stars)"
-        )
-        handles = [
-            plt.Line2D([0], [0], marker="o", linestyle="", color=color_map[name],
-                       label=name, markeredgecolor="black")
-            for name in cat_list
-        ]
-        handles.append(
-            plt.Line2D([0], [0], marker="*", linestyle="", color="gold",
-                       label="Recommended target", markeredgecolor="black", markersize=12)
-        )
-        ax.legend(handles=handles, title="cluster", loc="upper right")
-        fig.tight_layout()
-        fig.savefig(output_dir / "final_clusters_with_followers.png", dpi=150)
-        plt.close(fig)
+    correlation = float(np.corrcoef(np.log1p(clusters["follower_count"]), np.log1p(clusters[ENGAGEMENT]))[0, 1])
+    print(f"\nCorrelation log(follower) vs log(engagement/post): {correlation:.4f}")
 
     top_followed = clusters.sort_values("follower_count", ascending=False).head(top_n)
-
-    top_cluster_name = clusters.groupby(label_column)["mean_engagement"].mean().idxmax()
+    top_cluster_name = clusters.groupby("cluster_name")[ENGAGEMENT].mean().idxmax()
     top_targets = (
-        clusters[clusters[label_column] == top_cluster_name]
-        .sort_values("mean_engagement", ascending=False)
+        clusters[clusters["cluster_name"] == top_cluster_name]
+        .sort_values(TARGET_RANKING, ascending=False)
         .head(top_targets_n)
     )
+    plot_final(clusters, top_followed, top_targets, top_cluster_name, output_dir)
 
-    clusters.to_csv(output_dir / "user_clusters_with_followers.csv", index=False)
-    report = {
-        "accounts": len(clusters),
-        "correlation_log_followers_vs_log_engagement": correlation,
-        "top_followed": top_followed[[
-            "author_id", "follower_count", label_column, "mean_engagement", "engagement_rate",
-        ]].to_dict(orient="records"),
-        "top_recommended_targets": top_targets[[
-            "author_id", "follower_count", "mean_engagement", "engagement_rate",
-        ]].to_dict(orient="records"),
-    }
-    (output_dir / "follower_check_report.json").write_text(
-        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
-    )
+    target_columns = [
+        "author_id", "follower_count", "post_count", TARGET_RANKING, ENGAGEMENT, "engagement_rate",
+    ]
+    print(f"\nTop {top_targets_n} recommended accounts in '{top_cluster_name}', by distinct people reached")
+    print(top_targets[target_columns].round(2).to_string(index=False))
     print(f"\nResults saved in {output_dir}")
-    return report
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--clusters-path", type=Path,
-        default=PROJECT_ROOT / "reports" / "clusters" / "user_clusters.csv",
-    )
-    parser.add_argument(
-        "--data-dir", type=Path,
-        default=PROJECT_ROOT / "data",
+        default=PROJECT_ROOT / "data" / "processed" / "clusters" / "user_clusters.csv",
     )
     parser.add_argument(
         "--output-dir", type=Path,
@@ -158,7 +107,7 @@ def main():
     parser.add_argument("--top-targets-n", type=int, default=15)
     args = parser.parse_args()
     try:
-        run(args.clusters_path, args.data_dir, args.output_dir, args.top_n, args.top_targets_n)
+        run(args.clusters_path, args.output_dir, args.top_n, args.top_targets_n)
     except (OSError, UnicodeError, ValueError) as error:
         parser.exit(1, f"Could not finish follower check: {error}\n")
 

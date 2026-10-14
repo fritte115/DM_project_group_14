@@ -1,7 +1,8 @@
 from __future__ import annotations
 import csv
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
+import numpy as np
 from src.transform import POST_END, POST_START
 
 WINDOW_DAYS = (POST_END - POST_START).days
@@ -61,3 +62,44 @@ def detect_bots(features, max_posts_per_day):
         author_id for author_id, f in features.items()
         if f["posts_per_day"] > max_posts_per_day
     }
+
+def read_responders(path: str | Path):
+    path = Path(path).expanduser()
+    with path.open(encoding="utf-8", newline="") as file:
+        for row in csv.DictReader(file):
+            yield {
+                "author_id": row["author_id"],
+                "responder_id": row["responder_id"],
+                "responses_7d": int(row["responses_7d"]),
+            }
+
+def count_unique_responders(responders):
+    # responders.csv has one row per (author, responder) pair, so rows per author = distinct responders.
+    return dict(Counter(row["author_id"] for row in responders))
+
+def count_followers(following, subscriptions, authors):
+    # Followers are the union of both files, so an account listed in both counts once.
+    followers = {author_id: set() for author_id in authors}
+    for row in following:
+        if row["followed_id"] in followers:
+            followers[row["followed_id"]].add(row["follower_id"])
+    for row in subscriptions:
+        if row["subscribed_to_id"] in followers:
+            followers[row["subscribed_to_id"]].add(row["subscriber_id"])
+    return {author_id: len(ids) for author_id, ids in followers.items()}
+
+def estimate_shrinkage(post_counts, means, stds):
+    # Empirical Bayes (normal-normal): an author's observed mean is their true mean plus
+    # sampling noise with variance within / post_count. Returns the population mean and
+    # prior_posts = within / between, i.e. how many posts an author needs before their own
+    # mean weighs as much as the population mean.
+    n, x, s = (np.asarray(values, dtype=float) for values in (post_counts, means, stds))
+    prior_mean = float((n * x).sum() / n.sum())
+    within = float((s ** 2 * n).sum() / n.sum())
+    between = float(x.var() - np.mean(s ** 2 / n))
+    if between <= 0:
+        raise ValueError("Between-author variance is not positive; shrinkage cannot be estimated.")
+    return prior_mean, within / between
+
+def shrink_mean(engagement_total, post_count, prior_mean, prior_posts):
+    return (engagement_total + prior_posts * prior_mean) / (post_count + prior_posts)

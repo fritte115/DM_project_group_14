@@ -38,12 +38,6 @@ def clean_likes(likes):
     for (user_id, post_id), timestamp in earliest.items():
         yield {"userID": user_id, "PostID": post_id, "Timestamp": timestamp}
 
-def filter_entries(entries):
-    for entry in entries:
-        published_at = parse_timestamp(entry["Timestamp"])
-        if POST_START <= published_at < POST_END:
-            yield {**entry, "Timestamp": published_at}
-
 def is_response_in_window(published_at, response_at):
     return (
         POST_START <= published_at < POST_END

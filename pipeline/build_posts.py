@@ -1,6 +1,5 @@
 import argparse
 import csv
-import json
 from collections import Counter
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -13,6 +12,7 @@ from src.transform import (
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 POST_COLUMNS = ("post_id", "author_id", "published_at", "likes_7d", "comments_7d", "has_image", "has_video")
+RESPONDER_COLUMNS = ("author_id", "responder_id", "responses_7d")
 
 def media_flag(value, field, stats):
     if value.strip().lower() in ("", "null", "\\n"):
@@ -127,6 +127,8 @@ def build_posts(data_dir, output_dir):
                         ])
 
         counts = {"likes": Counter(), "comments": Counter()}
+        # (author_id, responder_id) -> included likes + comments, used for audience breadth.
+        responders = Counter()
 
         for name, rows, post_column, actor_column in (
             ("likes", clean_likes(read_likes(data_dir / "likes.csv")), "PostID", "userID"),
@@ -147,6 +149,7 @@ def build_posts(data_dir, output_dir):
 
                 if status == "included":
                     counts[name][post_id] += 1
+                    responders[posts[post_id][0], actor] += 1
                     if actor not in users:
                         report[name]["included_unknown_actor"] += 1
 
@@ -168,14 +171,21 @@ def build_posts(data_dir, output_dir):
                     if likes == 0 and comments == 0:
                         report["output"]["zero_response_posts"] += 1
 
+        with (stage / "responders.csv").open("w", encoding="utf-8", newline="") as target:
+            writer = csv.writer(target)
+            writer.writerow(RESPONDER_COLUMNS)
+            for (author, responder), responses in responders.items():
+                writer.writerow([author, responder, responses])
+                report["output"]["responder_pairs"] += 1
+                report["output"]["responder_responses"] += responses
+
         assert report["output"]["rows"] == report["entries"]["included"]
         assert report["output"]["likes_7d"] == report["likes"]["included"]
         assert report["output"]["comments_7d"] == report["comments"]["included"]
-        base_path.unlink()
-        
-        (stage / "report.json").write_text(
-            json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
+        assert report["output"]["responder_responses"] == (
+            report["output"]["likes_7d"] + report["output"]["comments_7d"]
         )
+        base_path.unlink()
         stage.rename(output_dir)
 
     for key, count in report["output"].items():
