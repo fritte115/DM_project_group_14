@@ -13,8 +13,8 @@ parser.add_argument(
 args = parser.parse_args()
 file_path = args.file.expanduser()
 
-print(f"Fil: {file_path.name}")
-print(f"Storlek: {file_path.stat().st_size / 1024**2:.1f} MiB")
+print(f"File: {file_path.name}")
+print(f"Size: {file_path.stat().st_size / 1024**2:.1f} MiB")
 
 with file_path.open("rb") as file:
     raw = file.read(65537)
@@ -25,15 +25,15 @@ raw = raw[:65536]
 if truncated:
     last_newline = raw.rfind(b"\n")
     if last_newline == -1:
-        raise ValueError("Ingen hel rad ryms i provet.")
+        raise ValueError("No complete row fits in the sample.")
     raw = raw[:last_newline + 1]
 
 sample = raw.decode("utf-8-sig")
 
 if not sample:
-    raise ValueError("Filen eller provet är tomt.")
+    raise ValueError("The file or sample is empty.")
 
-print("\n--- Början som råtext ---")
+print("\n--- Start of file as raw text ---")
 print(repr(sample[:1000]))
 
 try:
@@ -41,10 +41,10 @@ try:
     separator = dialect.delimiter
 except csv.Error:
     raise ValueError(
-        "Kunde inte gissa avgränsaren."
+        "Could not detect the delimiter."
     ) from None
 
-print(f"\nGissad avgränsare: {separator!r}")
+print(f"\nDetected delimiter: {separator!r}")
 
 reader = csv.reader(
     io.StringIO(sample, newline=""),
@@ -60,17 +60,17 @@ for row in reader:
     if len(rows) == 100:
         break
 
-print(f"\n--- Formatkontroll av {len(rows)} rader i provet ---")
+print(f"\n--- Format check of {len(rows)} rows in the sample ---")
 
 for fields, count in sorted(Counter(len(row) for row in rows).items()):
-    print(f"{count} rader har {fields} fält")
+    print(f"{count} rows have {fields} fields")
 
-print("\n--- De första tre raderna, uppdelade i fält ---")
+print("\n--- First three rows, split into fields ---")
 
 for number, row in enumerate(rows[:3], start=1):
-    print(f"\nRad {number} ({len(row)} fält):")
+    print(f"\nRow {number} ({len(row)} fields):")
 
     for column, value in enumerate(row, start=1):
         preview = repr(value[:150])
-        suffix = " … [förkortat]" if len(value) > 150 else ""
-        print(f"  Fält {column:2}: {preview}{suffix}")
+        suffix = " … [truncated]" if len(value) > 150 else ""
+        print(f"  Field {column:2}: {preview}{suffix}")

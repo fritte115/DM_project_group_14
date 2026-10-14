@@ -29,15 +29,15 @@ def read_users(path):
                 empty += 1
             else:
                 known.add(row[0])
-    print(f"users.csv: {rows:,} rader, {len(known):,} unika ID:n, "
-          f"{bad:,} rader med fel fältantal, {empty:,} saknade ID:n.", flush=True)
+    print(f"users.csv: {rows:,} rows, {len(known):,} unique IDs, "
+          f"{bad:,} rows with wrong field count, {empty:,} missing IDs.", flush=True)
     return known
 
 
 def analyze(data_dir, temp_dir=None):
     for name in ["users.csv", *[item[0] for item in FILES]]:
         if not (data_dir / name).is_file():
-            raise FileNotFoundError(f"Hittar inte {data_dir / name}")
+            raise FileNotFoundError(f"File not found: {data_dir / name}")
     csv.field_size_limit(16 * 1024 * 1024)
     known = read_users(data_dir / "users.csv")
     codes = {}
@@ -54,17 +54,15 @@ def analyze(data_dir, temp_dir=None):
                      "self_rows": 0, "months": Counter(), "examples": []}
                 ids_a, ids_b, unknown_a, unknown_b = set(), set(), set(), set()
                 earliest = latest = None
-                print(f"\nLäser {name} …", flush=True)
+                print(f"\nReading {name} ...", flush=True)
                 with (data_dir / name).open(encoding="utf-8-sig", newline="") as file:
                     reader = csv.reader(file, delimiter=delimiter, quoting=csv.QUOTE_NONE, strict=True)
                     for number, row in enumerate(reader, 1):
                         s["rows"] += 1
-                        if number % 1_000_000 == 0:
-                            print(f"  {number:,} rader lästa", flush=True)
                         if len(row) != width:
                             s["wrong_width"] += 1
                             if len(s["examples"]) < 5:
-                                s["examples"].append(f"Rad {number}: {len(row)} fält")
+                                s["examples"].append(f"Row {number}: {len(row)} fields")
                             continue
 
                         a, b = row[:2]
@@ -103,7 +101,7 @@ def analyze(data_dir, temp_dir=None):
                                 except ValueError:
                                     s["invalid_dates"] += 1
                                     if len(s["examples"]) < 5:
-                                        s["examples"].append(f"Rad {number}: ogiltigt datum {value!r}")
+                                        s["examples"].append(f"Row {number}: invalid date {value!r}")
                                 else:
                                     s["months"][date.strftime("%Y-%m")] += 1
                                     earliest = date if earliest is None else min(earliest, date)
@@ -119,7 +117,7 @@ def analyze(data_dir, temp_dir=None):
 
         del known, codes
         same = reverse = both = 0
-        print("\nJämför unika kontopar, en del i taget …", flush=True)
+        print("\nComparing unique account pairs, one partition at a time ...", flush=True)
         for index, part in enumerate(parts):
             pairs = [set(), set()]
             repeated = [set(), set()]
@@ -144,56 +142,54 @@ def analyze(data_dir, temp_dir=None):
                 same += match_same
                 reverse += match_reverse
                 both += match_same and match_reverse
-            if (index + 1) % 16 == 0:
-                print(f"  {index + 1}/{PARTITIONS} delar klara", flush=True)
             del pairs, repeated
             part.unlink()
 
     for s in summaries:
         print(f"\n--- {s['file']} ---")
-        labels = [("rows", "Alla rader"), ("wrong_width", "Fel antal fält"),
-                  ("complete_pairs", "Rader med båda konto-ID:n"),
-                  ("unique_a", "Unika ID:n i fält 1"), ("unique_b", "Unika ID:n i fält 2"),
-                  ("missing_a", "Saknade ID:n i fält 1"), ("missing_b", "Saknade ID:n i fält 2"),
-                  ("unknown_a_rows", "Rader med ID i fält 1 som saknas i users"),
-                  ("unknown_b_rows", "Rader med ID i fält 2 som saknas i users"),
-                  ("unknown_a_unique", "Unika ID:n i fält 1 som saknas i users"),
-                  ("unknown_b_unique", "Unika ID:n i fält 2 som saknas i users"),
-                  ("unique_pairs", "Unika ordnade kontopar"),
-                  ("repeated_pairs", "Ordnade kontopar som återkommer"),
-                  ("extra_pair_rows", "Extra rader med samma ordnade kontopar"),
-                  ("self_rows", "Rader där båda kontona är samma"),
-                  ("unique_self_pairs", "Unika par där båda kontona är samma")]
+        labels = [("rows", "All rows"), ("wrong_width", "Wrong field count"),
+                  ("complete_pairs", "Rows with both account IDs"),
+                  ("unique_a", "Unique IDs in field 1"), ("unique_b", "Unique IDs in field 2"),
+                  ("missing_a", "Missing IDs in field 1"), ("missing_b", "Missing IDs in field 2"),
+                  ("unknown_a_rows", "Rows with a field 1 ID missing from users"),
+                  ("unknown_b_rows", "Rows with a field 2 ID missing from users"),
+                  ("unknown_a_unique", "Unique field 1 IDs missing from users"),
+                  ("unknown_b_unique", "Unique field 2 IDs missing from users"),
+                  ("unique_pairs", "Unique ordered account pairs"),
+                  ("repeated_pairs", "Repeated ordered account pairs"),
+                  ("extra_pair_rows", "Extra rows with the same ordered pair"),
+                  ("self_rows", "Rows where both accounts are the same"),
+                  ("unique_self_pairs", "Unique pairs where both accounts are the same")]
         for field, label in labels:
             print(f"{label}: {s[field]:,}")
         if s["file"] == FILES[0][0]:
-            print(f"Tidigaste tidsstämpel: {s['earliest']}")
-            print(f"Senaste tidsstämpel: {s['latest']}")
-            print(f"Saknade tidsstämplar: {s['missing_dates']:,}")
-            print(f"Ogiltiga, ej saknade datum: {s['invalid_dates']:,}")
+            print(f"Earliest timestamp: {s['earliest']}")
+            print(f"Latest timestamp: {s['latest']}")
+            print(f"Missing timestamps: {s['missing_dates']:,}")
+            print(f"Invalid, non-missing dates: {s['invalid_dates']:,}")
             for month, count in sorted(s["months"].items()):
-                print(f"  {month}: {count:,} rader")
+                print(f"  {month}: {count:,} rows")
         for example in s["examples"]:
-            print(f"FORMATPROBLEM: {example}")
+            print(f"FORMAT PROBLEM: {example}")
 
-    print("\n--- ÖVERLAPP MELLAN FILERNA ---")
-    print(f"Samma par (A, B) finns i subscriptions: {same:,}")
-    print(f"Omvänt par (B, A) finns i subscriptions: {reverse:,}")
-    print(f"Båda ordningarna finns i subscriptions: {both:,}")
-    print(f"Minst en ordning finns: {same + reverse - both:,}")
+    print("\n--- OVERLAP BETWEEN THE FILES ---")
+    print(f"Same pair (A, B) in subscriptions: {same:,}")
+    print(f"Reversed pair (B, A) in subscriptions: {reverse:,}")
+    print(f"Both orders in subscriptions: {both:,}")
+    print(f"At least one order present: {same + reverse - both:,}")
     return {"files": summaries, "same": same, "reverse": reverse, "both": both}
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir", type=Path, default=Path(__file__).resolve().parent.parent / "data")
-    parser.add_argument("--temp-dir", type=Path, help="Befintlig mapp med ledigt utrymme för temporära filer")
+    parser.add_argument("--temp-dir", type=Path, help="Existing folder with free space for temporary files")
     args = parser.parse_args()
     try:
         analyze(args.data_dir.expanduser(), args.temp_dir.expanduser() if args.temp_dir else None)
     except (OSError, UnicodeError, csv.Error, MemoryError, struct.error) as error:
-        raise SystemExit(f"Kontrollen avbröts ({type(error).__name__}): {error}. "
-                         "Materialet är inte fullständigt kontrollerat.") from error
+        raise SystemExit(f"Check aborted ({type(error).__name__}): {error}. "
+                         "The data has not been fully checked.") from error
 
 
 if __name__ == "__main__":

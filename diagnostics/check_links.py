@@ -21,12 +21,12 @@ def check_links(data_dir):
         if not (data_dir / filename).is_file():
             raise FileNotFoundError(data_dir / filename)
 
-    print("Läser users.csv …", flush=True)
+    print("Reading users.csv ...", flush=True)
     user_ids = {
         row["id"] for row in read_users(data_dir / "users.csv")
         if not is_missing(row["id"])
     }
-    print(f"Unika konto-ID:n: {len(user_ids):,}")
+    print(f"Unique account IDs: {len(user_ids):,}")
 
     references = {}
     results = {}
@@ -34,7 +34,7 @@ def check_links(data_dir):
         ("likes", read_likes, "likes.csv", "userID", "PostID"),
         ("comments", read_comments, "commentAugSept.csv", "PostedBy", "EntryID"),
     ):
-        print(f"Läser {filename} …", flush=True)
+        print(f"Reading {filename} ...", flush=True)
         counts = Counter()
         total = missing_users = 0
         for row in reader(data_dir / filename):
@@ -42,14 +42,12 @@ def check_links(data_dir):
             counts[row[post_column]] += 1
             if row[user_column] not in user_ids:
                 missing_users += 1
-            if total % 500_000 == 0:
-                print(f"  {total:,} rader lästa", flush=True)
         references[name] = counts
         results[name] = {"rows": total, "without_user": missing_users}
 
     total_entries = missing_authors = 0
     for filename in ("entries1.csv", "entries2.csv", "entries3.csv"):
-        print(f"Läser {filename} …", flush=True)
+        print(f"Reading {filename} ...", flush=True)
         for number, entry in enumerate(read_entries(data_dir / filename), start=1):
             total_entries += 1
             if entry["PostedBy"] not in user_ids:
@@ -58,25 +56,23 @@ def check_links(data_dir):
             if not is_missing(post_id):
                 references["likes"].pop(post_id, None)
                 references["comments"].pop(post_id, None)
-            if number % 500_000 == 0:
-                print(f"  {number:,} rader lästa", flush=True)
 
     results["entries"] = {"rows": total_entries, "without_user": missing_authors}
     for name in ("likes", "comments"):
         results[name]["without_post"] = sum(references[name].values())
 
-    print("Räknar omatchade likes per månad …", flush=True)
+    print("Counting unmatched likes per month ...", flush=True)
     likes_per_month = Counter()
     unmatched_per_month = Counter()
     for like in read_likes(data_dir / "likes.csv"):
         timestamp = like["Timestamp"]
         if is_missing(timestamp):
-            month = "Saknat datum"
+            month = "Missing date"
         else:
             try:
                 month = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S").strftime("%Y-%m")
             except ValueError:
-                month = "Ogiltigt datum"
+                month = "Invalid date"
         likes_per_month[month] += 1
         if like["PostID"] in references["likes"]:
             unmatched_per_month[month] += 1
@@ -85,20 +81,20 @@ def check_links(data_dir):
     results["likes"]["rows_by_month"] = dict(sorted(likes_per_month.items()))
     results["likes"]["without_post_by_month"] = dict(sorted(unmatched_per_month.items()))
 
-    print("\n--- KOPPLINGSKONTROLL ---")
+    print("\n--- LINK CHECK ---")
     for name in ("entries", "likes", "comments"):
         result = results[name]
-        print(f"\n{name}: {result['rows']:,} rader")
+        print(f"\n{name}: {result['rows']:,} rows")
         for key, label in (
-            ("without_user", "Rader utan matchande konto i users"),
-            ("without_post", "Rader utan matchande inlägg i entries"),
+            ("without_user", "Rows without a matching account in users"),
+            ("without_post", "Rows without a matching post in entries"),
         ):
             if key in result:
                 count = result[key]
-                share = f"{count / result['rows']:.2%}" if result["rows"] else "ej tillämpligt"
+                share = f"{count / result['rows']:.2%}" if result["rows"] else "not applicable"
                 print(f"{label}: {count:,} ({share})")
-    print("\n--- LIKES UTAN MATCHANDE INLÄGG, PER LIKE-MÅNAD ---")
-    print(f"{'Månad':16} {'Alla likes':>12} {'Omatchade':>12} {'Andel':>10}")
+    print("\n--- LIKES WITHOUT A MATCHING POST, BY LIKE MONTH ---")
+    print(f"{'Month':16} {'All likes':>12} {'Unmatched':>12} {'Share':>10}")
     for month, total in sorted(likes_per_month.items()):
         unmatched = unmatched_per_month[month]
         print(f"{month:16} {total:12,} {unmatched:12,} {unmatched / total:10.2%}")
@@ -115,7 +111,7 @@ def main():
     try:
         check_links(args.data_dir)
     except (OSError, UnicodeError, ValueError, csv.Error) as error:
-        parser.exit(1, f"Kopplingskontrollen avbröts: {error}\n")
+        parser.exit(1, f"Link check aborted: {error}\n")
 
 
 if __name__ == "__main__":

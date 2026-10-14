@@ -38,7 +38,7 @@ with file_path.open(encoding="utf-8-sig", newline="") as file:
             wrong_field_count += 1
             if len(problem_examples) < 5:
                 problem_examples.append(
-                    f"Post {row_number}: {len(row)} fält"
+                    f"Record {row_number}: {len(row)} fields"
                 )
             continue
 
@@ -79,7 +79,7 @@ with file_path.open(encoding="utf-8-sig", newline="") as file:
             invalid_dates += 1
             if len(problem_examples) < 5:
                 problem_examples.append(
-                    f"Post {row_number}: ogiltigt datum {timestamp!r}"
+                    f"Record {row_number}: invalid date {timestamp!r}"
                 )
             continue
 
@@ -94,34 +94,34 @@ different_timestamps = sum(
     len(timestamps) > 1 for timestamps in pair_timestamps.values()
 )
 
-print("\n--- STRUKTUR ---")
-print(f"Totalt antal poster:       {total_rows:,}")
-print(f"Poster med tre fält:       {valid_rows:,}")
-print(f"Fel antal fält:            {wrong_field_count:,}")
+print("\n--- STRUCTURE ---")
+print(f"Total records:             {total_rows:,}")
+print(f"Records with three fields: {valid_rows:,}")
+print(f"Wrong field count:         {wrong_field_count:,}")
 
-print("\n--- ANVÄNDARE OCH INLÄGG ---")
-print(f"Unika användar-ID:n:       {len(users):,}")
-print(f"Unika inläggs-ID:n:        {len(posts):,}")
+print("\n--- USERS AND POSTS ---")
+print(f"Unique user IDs:           {len(users):,}")
+print(f"Unique post IDs:           {len(posts):,}")
 
-print("\n--- SAKNADE VÄRDEN ---")
+print("\n--- MISSING VALUES ---")
 for column in ["userID", "PostID", "Timestamp"]:
     print(f"{column:12}: {missing[column]:,}")
 
-print("\n--- DATUM ---")
-print(f"Tidigaste giltiga datum:  {earliest}")
-print(f"Senaste giltiga datum:    {latest}")
-print(f"Ogiltiga, ej tomma datum: {invalid_dates:,}")
+print("\n--- DATES ---")
+print(f"Earliest valid date:       {earliest}")
+print(f"Latest valid date:         {latest}")
+print(f"Invalid, non-empty dates:  {invalid_dates:,}")
 
-print("\nAntal poster per månad:")
+print("\nRecords per month:")
 for month, count in sorted(months.items()):
     print(f"  {month}: {count:,}")
 
-print("\n--- DUBBLETTER ---")
-print(f"Extra exakt identiska rader: {extra_exact_rows:,}")
-print(f"Återkommande användare–inlägg-par: {repeated_pairs:,}")
-print(f"Par med olika tidsstämpeltexter:   {different_timestamps:,}")
+print("\n--- DUPLICATES ---")
+print(f"Extra exactly identical rows:        {extra_exact_rows:,}")
+print(f"Repeated user–post pairs:            {repeated_pairs:,}")
+print(f"Pairs with different timestamp text: {different_timestamps:,}")
 
 if problem_examples:
-    print("\n--- EXEMPEL PÅ FORMATPROBLEM ---")
+    print("\n--- EXAMPLES OF FORMAT PROBLEMS ---")
     for example in problem_examples:
         print(example)

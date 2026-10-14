@@ -12,9 +12,9 @@ FILES = ["followingAugSept.csv", "subscriptions.csv"]
 def inspect(path):
     print(f"\n--- {path.name} ---")
     if not path.is_file():
-        print(f"Filen hittades inte: {path}")
+        print(f"File not found: {path}")
         return
-    print(f"Storlek: {path.stat().st_size / 1024**2:.1f} MiB")
+    print(f"Size: {path.stat().st_size / 1024**2:.1f} MiB")
 
     limit = 64 * 1024
     with path.open("rb") as file:
@@ -24,38 +24,38 @@ def inspect(path):
     if truncated:
         last_newline = raw.rfind(b"\n")
         if last_newline < 0:
-            print("Ingen komplett rad ryms i provet.")
+            print("No complete row fits in the sample.")
             return
         raw = raw[:last_newline + 1]
 
     sample = raw.decode("utf-8-sig")
     if not sample:
-        print("Filen eller provet är tomt.")
+        print("The file or sample is empty.")
         return
-    print("\nBörjan som råtext:")
+    print("\nStart of file as raw text:")
     print(repr(sample[:600]))
 
     try:
         dialect = csv.Sniffer().sniff(sample, delimiters="\t|;,")
     except csv.Error:
-        print("Kunde inte gissa avgränsaren. Undersök råtexten ovan.")
+        print("Could not detect the delimiter. Inspect the raw text above.")
         return
 
-    print(f"\nGissad avgränsare: {dialect.delimiter!r}")
+    print(f"\nDetected delimiter: {dialect.delimiter!r}")
     csv.field_size_limit(max(csv.field_size_limit(), limit))
     reader = csv.reader(io.StringIO(sample, newline=""), dialect, strict=True)
     rows = list(islice(reader, 100))
 
-    print(f"\nFormatkontroll av {len(rows)} rader i provet:")
+    print(f"\nFormat check of {len(rows)} rows in the sample:")
     for fields, count in sorted(Counter(len(row) for row in rows).items()):
-        print(f"{count} rader har {fields} fält")
+        print(f"{count} rows have {fields} fields")
 
-    print("\nFörsta fem raderna:")
+    print("\nFirst five rows:")
     for number, row in enumerate(rows[:5], start=1):
-        print(f"\nRad {number}:")
+        print(f"\nRow {number}:")
         for column, value in enumerate(row, start=1):
-            suffix = " … [förkortat]" if len(value) > 120 else ""
-            print(f"  Fält {column}: {value[:120]!r}{suffix}")
+            suffix = " … [truncated]" if len(value) > 120 else ""
+            print(f"  Field {column}: {value[:120]!r}{suffix}")
 
 
 def main():
@@ -67,7 +67,7 @@ def main():
         try:
             inspect(args.data_dir.expanduser() / name)
         except (OSError, UnicodeError, csv.Error) as error:
-            print(f"Formatprovet för {name} avbröts: {error}")
+            print(f"Format sample for {name} was aborted: {error}")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,5 @@
 import argparse
 import csv
-import json
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -16,7 +15,7 @@ def analyze(data_dir):
     paths = [data_dir / name for name in FILES]
     for path in paths:
         if not path.is_file():
-            raise FileNotFoundError(f"Hittar inte filen: {path}")
+            raise FileNotFoundError(f"File not found: {path}")
 
     seen = {}
     results = []
@@ -37,20 +36,18 @@ def analyze(data_dir):
             "problem_examples": [],
         }
         earliest = latest = None
-        print(f"\nLäser {path.name} …", flush=True)
+        print(f"\nReading {path.name} ...", flush=True)
 
         with path.open(encoding="utf-8-sig", newline="") as file:
             reader = csv.reader(file, delimiter="\t", quoting=csv.QUOTE_NONE, strict=True)
             for row_number, row in enumerate(reader, start=1):
                 result["rows"] += 1
-                if row_number % 500_000 == 0:
-                    print(f"  {row_number:,} rader lästa", flush=True)
 
                 if len(row) != 12:
                     result["wrong_width"] += 1
                     if len(result["problem_examples"]) < 5:
                         result["problem_examples"].append(
-                            f"Rad {row_number}: {len(row)} fält, förväntat 12"
+                            f"Row {row_number}: {len(row)} fields, expected 12"
                         )
                     continue
 
@@ -76,7 +73,7 @@ def analyze(data_dir):
                     result["invalid_dates"] += 1
                     if len(result["problem_examples"]) < 5:
                         result["problem_examples"].append(
-                            f"Rad {row_number}: ogiltig tidsstämpel {timestamp!r}"
+                            f"Row {row_number}: invalid timestamp {timestamp!r}"
                         )
                     continue
 
@@ -119,17 +116,17 @@ def analyze(data_dir):
         "overlap_example_ids": example_ids,
         "months": dict(sorted(combined_months.items())),
     }
-    print("\n--- ALLA TRE FILER TILLSAMMANS ---")
-    print(f"Totalt antal rader: {combined['rows']:,}")
-    print(f"Unika PostID:n: {combined['unique_post_ids']:,}")
-    print(f"ID:n som återkommer: {repeated_ids:,}")
-    print(f"Extra ID-förekomster: {combined['extra_id_occurrences']:,}")
-    print(f"ID:n som finns i flera filer: {combined['ids_in_multiple_files']:,}")
+    print("\n--- ALL THREE FILES COMBINED ---")
+    print(f"Total rows: {combined['rows']:,}")
+    print(f"Unique PostIDs: {combined['unique_post_ids']:,}")
+    print(f"Repeated IDs: {repeated_ids:,}")
+    print(f"Extra ID occurrences: {combined['extra_id_occurrences']:,}")
+    print(f"IDs present in several files: {combined['ids_in_multiple_files']:,}")
     for names, count in sorted(overlaps.items()):
-        print(f"  Exakt dessa filer: {names}: {count:,} ID:n")
+        print(f"  Exactly these files: {names}: {count:,} IDs")
     if example_ids:
-        print(f"Exempel på ID:n i flera filer: {example_ids}")
-    print("\nAntal rader per månad, alla filer:")
+        print(f"Examples of IDs in several files: {example_ids}")
+    print("\nRows per month, all files:")
     for month, count in sorted(combined_months.items()):
         print(f"  {month}: {count:,}")
 
@@ -138,41 +135,34 @@ def analyze(data_dir):
 
 def print_file_result(result):
     print(f"\n--- {result['file']} ---")
-    print(f"Antal rader: {result['rows']:,}")
-    print(f"Rader med 12 fält: {result['valid_width']:,}")
-    print(f"Fel antal fält: {result['wrong_width']:,}")
-    print(f"Unika PostID:n i filen: {result['unique_post_ids']:,}")
-    print(f"Extra ID-förekomster inom filen: {result['extra_id_occurrences_within_file']:,}")
+    print(f"Rows: {result['rows']:,}")
+    print(f"Rows with 12 fields: {result['valid_width']:,}")
+    print(f"Wrong field count: {result['wrong_width']:,}")
+    print(f"Unique PostIDs in the file: {result['unique_post_ids']:,}")
+    print(f"Extra ID occurrences within the file: {result['extra_id_occurrences_within_file']:,}")
     for column, count in result["missing"].items():
-        print(f"Saknade {column}: {count:,}")
-    print(f"Ogiltiga, ej saknade datum: {result['invalid_dates']:,}")
-    print(f"Tidigaste datum: {result['earliest']}")
-    print(f"Senaste datum: {result['latest']}")
-    print("Antal rader per månad:")
+        print(f"Missing {column}: {count:,}")
+    print(f"Invalid, non-missing dates: {result['invalid_dates']:,}")
+    print(f"Earliest date: {result['earliest']}")
+    print(f"Latest date: {result['latest']}")
+    print("Rows per month:")
     for month, count in result["months"].items():
         print(f"  {month}: {count:,}")
     for example in result["problem_examples"]:
-        print(f"  FORMATPROBLEM: {example}")
+        print(f"  FORMAT PROBLEM: {example}")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir", type=Path, default=Path(__file__).resolve().parent.parent / "data")
-    parser.add_argument("--report", type=Path, help="Valfri sökväg till en ny JSON-fil med resultaten")
     args = parser.parse_args()
-    if args.report and args.report.exists():
-        parser.error("Rapportfilen finns redan. Välj ett nytt namn.")
     try:
-        result = analyze(args.data_dir.expanduser())
+        analyze(args.data_dir.expanduser())
     except (OSError, UnicodeError, csv.Error, MemoryError) as error:
         raise SystemExit(
-            f"Kontrollen avbröts ({type(error).__name__}): {error}. "
-            "Eventuella delresultat ovan täcker inte hela materialet."
+            f"Check aborted ({type(error).__name__}): {error}. "
+            "Any partial results above do not cover all the data."
         ) from error
-    if args.report:
-        with args.report.open("x", encoding="utf-8") as file:
-            json.dump(result, file, ensure_ascii=False, indent=2)
-        print(f"\nResultaten sparades i {args.report}")
 
 
 if __name__ == "__main__":

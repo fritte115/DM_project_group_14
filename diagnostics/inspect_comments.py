@@ -21,8 +21,8 @@ COLUMNS = [
 
 def inspect(path):
     limit = 256 * 1024
-    print(f"Fil: {path.name}")
-    print(f"Storlek: {path.stat().st_size / 1024**2:.1f} MiB")
+    print(f"File: {path.name}")
+    print(f"Size: {path.stat().st_size / 1024**2:.1f} MiB")
 
     with path.open("rb") as file:
         raw = file.read(limit + 1)
@@ -32,16 +32,16 @@ def inspect(path):
     if truncated:
         last_newline = raw.rfind(b"\n")
         if last_newline < 0:
-            raise ValueError("Ingen komplett rad ryms i provet.")
+            raise ValueError("No complete row fits in the sample.")
         raw = raw[:last_newline + 1]
 
     sample = raw.decode("utf-8-sig")
     if not sample:
-        raise ValueError("Filen eller provet är tomt.")
+        raise ValueError("The file or sample is empty.")
 
-    print("\n--- Början av filen som råtext ---")
+    print("\n--- Start of file as raw text ---")
     print(repr(sample[:800]))
-    print("\nAvgränsare: tab (\\t).")
+    print("\nDelimiter: tab (\\t).")
 
     csv.field_size_limit(max(csv.field_size_limit(), limit))
     reader = csv.reader(
@@ -52,20 +52,20 @@ def inspect(path):
     )
     rows = list(islice(reader, 100))
 
-    print(f"\n--- Formatkontroll av {len(rows)} rader i provet ---")
+    print(f"\n--- Format check of {len(rows)} rows in the sample ---")
     for fields, count in sorted(Counter(len(row) for row in rows).items()):
-        print(f"{count} rader har {fields} fält")
-    print(f"Förväntat antal utifrån det första lokala provet: {len(COLUMNS)}")
+        print(f"{count} rows have {fields} fields")
+    print(f"Expected from the first local sample: {len(COLUMNS)}")
 
-    print("\n--- De första tre raderna ---")
+    print("\n--- First three rows ---")
     for number, row in enumerate(rows[:3], start=1):
-        print(f"\nRad {number} ({len(row)} fält):")
+        print(f"\nRow {number} ({len(row)} fields):")
         matches = len(row) == len(COLUMNS)
         if not matches:
-            print("  Fel antal fält.")
+            print("  Wrong number of fields.")
         for index, value in enumerate(row):
-            label = COLUMNS[index] if matches else f"Fält {index + 1}"
-            suffix = " … [visningen förkortad]" if len(value) > 150 else ""
+            label = COLUMNS[index] if matches else f"Field {index + 1}"
+            suffix = " … [display truncated]" if len(value) > 150 else ""
             print(f"  {label:12}: {value[:150]!r}{suffix}")
 
 
@@ -79,7 +79,7 @@ def main():
     try:
         inspect(args.file.expanduser())
     except (OSError, UnicodeError, ValueError, csv.Error) as error:
-        parser.exit(1, f"\nKunde inte slutföra formatprovet: {error}\n")
+        parser.exit(1, f"\nCould not complete the format sample: {error}\n")
 
 
 if __name__ == "__main__":

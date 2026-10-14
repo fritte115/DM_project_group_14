@@ -24,17 +24,15 @@ def analyze(path):
     earliest = latest = None
     csv.field_size_limit(16 * 1024 * 1024)
 
-    print(f"Läser {path.name} …", flush=True)
+    print(f"Reading {path.name} ...", flush=True)
     with path.open(encoding="utf-8-sig", newline="") as file:
         reader = csv.reader(file, delimiter="\t", quoting=csv.QUOTE_NONE, strict=True)
         for number, row in enumerate(reader, start=1):
             rows += 1
-            if number % 500_000 == 0:
-                print(f"  {number:,} rader lästa", flush=True)
             if len(row) != 9:
                 wrong_width += 1
                 if len(problems) < 5:
-                    problems.append(f"Rad {number}: {len(row)} fält, förväntat 9")
+                    problems.append(f"Row {number}: {len(row)} fields, expected 9")
                 continue
 
             valid_rows += 1
@@ -63,7 +61,7 @@ def analyze(path):
             except ValueError:
                 invalid_dates += 1
                 if len(problems) < 5:
-                    problems.append(f"Rad {number}: ogiltigt datum {timestamp!r}")
+                    problems.append(f"Row {number}: invalid date {timestamp!r}")
                 continue
             months[date.strftime("%Y-%m")] += 1
             earliest = date if earliest is None else min(earliest, date)
@@ -72,34 +70,34 @@ def analyze(path):
     repeated_ids = sum(count > 1 for count in comment_ids.values())
     extra_occurrences = sum(count - 1 for count in comment_ids.values())
 
-    print("\n--- STRUKTUR ---")
-    print(f"Totalt antal rader: {rows:,}")
-    print(f"Rader med nio fält: {valid_rows:,}")
-    print(f"Fel antal fält: {wrong_width:,}")
+    print("\n--- STRUCTURE ---")
+    print(f"Total rows: {rows:,}")
+    print(f"Rows with nine fields: {valid_rows:,}")
+    print(f"Wrong field count: {wrong_width:,}")
 
-    print("\n--- KOMMENTARER, INLÄGG OCH KONTON ---")
-    print(f"Unika kommentars-ID:n (PostID): {len(comment_ids):,}")
-    print(f"Unika refererade inläggs-ID:n (EntryID): {len(entry_ids):,}")
-    print(f"Unika författar-ID:n (PostedBy): {len(authors):,}")
-    print(f"Kommentars-ID:n som återkommer: {repeated_ids:,}")
-    print(f"Extra förekomster av kommentars-ID:n: {extra_occurrences:,}")
-    print(f"Avvikelser från ID-formatet EntryID/c/kommentar-ID: {id_mismatches:,}")
+    print("\n--- COMMENTS, POSTS AND ACCOUNTS ---")
+    print(f"Unique comment IDs (PostID): {len(comment_ids):,}")
+    print(f"Unique referenced post IDs (EntryID): {len(entry_ids):,}")
+    print(f"Unique author IDs (PostedBy): {len(authors):,}")
+    print(f"Repeated comment IDs: {repeated_ids:,}")
+    print(f"Extra occurrences of comment IDs: {extra_occurrences:,}")
+    print(f"Deviations from the ID format EntryID/c/comment-ID: {id_mismatches:,}")
 
-    print("\n--- SAKNADE VÄRDEN ---")
+    print("\n--- MISSING VALUES ---")
     for column in COLUMNS:
         print(f"{column:12}: {missing[column]:,}")
 
-    print("\n--- DATUM ---")
-    print(f"Tidigaste giltiga datum: {earliest}")
-    print(f"Senaste giltiga datum: {latest}")
-    print(f"Ogiltiga, ej saknade datum: {invalid_dates:,}")
-    print("Antal rader per månad:")
+    print("\n--- DATES ---")
+    print(f"Earliest valid date: {earliest}")
+    print(f"Latest valid date: {latest}")
+    print(f"Invalid, non-missing dates: {invalid_dates:,}")
+    print("Rows per month:")
     for month, count in sorted(months.items()):
         print(f"  {month}: {count:,}")
-    print(f"Rader i augusti–september 2010: {months['2010-08'] + months['2010-09']:,}")
+    print(f"Rows in August–September 2010: {months['2010-08'] + months['2010-09']:,}")
 
     if problems:
-        print("\n--- EXEMPEL PÅ FORMATPROBLEM ---")
+        print("\n--- EXAMPLES OF FORMAT PROBLEMS ---")
         for problem in problems:
             print(problem)
 
@@ -118,8 +116,8 @@ def main():
     try:
         analyze(args.file.expanduser())
     except (OSError, UnicodeError, csv.Error, MemoryError) as error:
-        raise SystemExit(f"Kontrollen avbröts ({type(error).__name__}): {error}. "
-                         "Materialet är inte fullständigt kontrollerat.") from error
+        raise SystemExit(f"Check aborted ({type(error).__name__}): {error}. "
+                         "The data has not been fully checked.") from error
 
 
 if __name__ == "__main__":

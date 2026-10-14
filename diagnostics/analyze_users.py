@@ -49,29 +49,29 @@ with file_path.open(encoding="utf-8-sig", newline="") as file:
 repeated_ids = sum(count > 1 for count in user_ids.values())
 extra_occurrences = sum(count - 1 for count in user_ids.values())
 
-print("\n--- FILENS STRUKTUR ---")
-print(f"Totalt antal CSV-poster:       {total_rows:,}")
-print(f"Poster med fem fält:           {valid_rows:,}")
-print(f"Poster med fel antal fält:     {wrong_field_count:,}")
+print("\n--- FILE STRUCTURE ---")
+print(f"Total CSV records:             {total_rows:,}")
+print(f"Records with five fields:      {valid_rows:,}")
+print(f"Records with wrong field count: {wrong_field_count:,}")
 
 if problem_examples:
-    print("Exempel på avvikande poster (postnummer, antal fält):")
+    print("Examples of malformed records (record number, field count):")
     print(problem_examples)
 
-print("\n--- KONTOTYPER ---")
+print("\n--- ACCOUNT TYPES ---")
 for account_type, count in account_types.most_common():
     percentage = count / valid_rows * 100
-    print(f"{account_type!r}: {count:,} poster ({percentage:.1f} %)")
+    print(f"{account_type!r}: {count:,} records ({percentage:.1f} %)")
 
-print("\n--- ANVÄNDAR-ID ---")
-print(f"Poster utan ID:                {missing_ids:,}")
-print(f"Antal unika, icke-saknade ID:n: {len(user_ids):,}")
-print(f"ID:n som förekommer flera gånger: {repeated_ids:,}")
-print(f"Extra förekomster av dessa ID:n:  {extra_occurrences:,}")
+print("\n--- USER IDS ---")
+print(f"Records without ID:              {missing_ids:,}")
+print(f"Unique non-missing IDs:          {len(user_ids):,}")
+print(f"IDs occurring more than once:    {repeated_ids:,}")
+print(f"Extra occurrences of those IDs:  {extra_occurrences:,}")
 
-print("\n--- PROFILBESKRIVNINGAR ---")
-print(f"Saknad beskrivning: {missing_descriptions:,}")
+print("\n--- PROFILE DESCRIPTIONS ---")
+print(f"Missing description: {missing_descriptions:,}")
 
 if valid_rows:
     percentage = missing_descriptions / valid_rows * 100
-    print(f"Andel saknade beskrivningar: {percentage:.1f} %")
+    print(f"Share missing descriptions: {percentage:.1f} %")
